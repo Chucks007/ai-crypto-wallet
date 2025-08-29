@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -54,7 +54,7 @@ def list_suggestions(limit: int = Query(50, ge=1, le=200), db: Session = Depends
 @router.post("/suggestions", response_model=SuggestionOut)
 def create_suggestion(payload: SuggestionIn, db: Session = Depends(get_db)):
     sug = Suggestion(
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
         rule=payload.rule,
         asset_from=payload.asset_from,
         asset_to=payload.asset_to,
@@ -76,7 +76,7 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="suggestion not found")
     dec = Decision(
         suggestion_id=sug.id,
-        decided_at=datetime.utcnow(),
+        decided_at=datetime.now(UTC),
         decision=payload.decision,
         reason=payload.reason,
     )
@@ -84,4 +84,3 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(dec)
     return dec
-

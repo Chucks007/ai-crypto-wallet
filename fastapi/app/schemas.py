@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class SuggestionIn(BaseModel):
@@ -19,9 +19,7 @@ class SuggestionIn(BaseModel):
 class SuggestionOut(SuggestionIn):
     id: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DecisionIn(BaseModel):
@@ -33,9 +31,7 @@ class DecisionIn(BaseModel):
 class DecisionOut(DecisionIn):
     id: int
     decided_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BalanceSnapshotOut(BaseModel):
@@ -47,6 +43,4 @@ class BalanceSnapshotOut(BaseModel):
     usd_value: Optional[float] = None
     source: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
