@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import React, { useEffect, useState } from 'react'
 import './App.css'
+import Overview from './pages/Overview'
+import Suggestions from './pages/Suggestions'
+import History from './pages/History'
+import Settings from './pages/Settings'
 
-function App() {
-  const [count, setCount] = useState(0)
+type Route = 'overview' | 'suggestions' | 'history' | 'settings'
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+function getRouteFromHash(): Route {
+  const h = window.location.hash.replace('#/', '')
+  if (h === 'suggestions' || h === 'history' || h === 'settings') return h
+  return 'overview'
 }
 
-export default App
+export default function App() {
+  const [route, setRoute] = useState<Route>(getRouteFromHash())
+  useEffect(() => {
+    const onHash = () => setRoute(getRouteFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  return (
+    <div style={{ padding: 24, fontFamily: 'Inter, system-ui, Arial, sans-serif' }}>
+      <header style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>AI Crypto Wallet</h2>
+        <nav style={{ display: 'flex', gap: 8 }}>
+          <a href="#/overview">Overview</a>
+          <a href="#/suggestions">Suggestions</a>
+          <a href="#/history">History</a>
+          <a href="#/settings">Settings</a>
+        </nav>
+      </header>
+      {route === 'overview' && <Overview />}
+      {route === 'suggestions' && <Suggestions />}
+      {route === 'history' && <History />}
+      {route === 'settings' && <Settings />}
+    </div>
+  )
+}
