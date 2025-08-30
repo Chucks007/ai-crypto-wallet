@@ -83,3 +83,29 @@ Answer style: **plan → patch → verify**. Ask at most one clarifying question
 - 2025-08-30: UTC-aware timestamps
   - SQLAlchemy models now use `DateTime(timezone=True)` for all timestamp columns in `backend/db/models.py`.
   - API uses `datetime.now(UTC)` for created/decided times; tests updated to seed UTC-aware datetimes.
+
+Note: Keep migration notes here while scope is small; migrate to `docs/CHANGELOG.md` once changes grow.
+
+---
+
+## 🗄️ DB Model Overview
+- Schema file: `backend/db/schema.sql`
+- Tables and relationships:
+  - `balance_snapshots` — time series of asset balances (+ optional USD price/value)
+  - `suggestions` — rule-based or AI suggestions with params and reasoning
+  - `decisions` — manual decisions on suggestions (approved/rejected/expired/cancelled)
+  - `trades` — execution records linked to suggestions (submitted/confirmed/failed/cancelled)
+  - `runtime_flags` — key/value flags (e.g., emergency stop)
+- Relations: `suggestions` 1→N `decisions`, `suggestions` 1→N `trades` (cascade on delete)
+
+---
+
+## ⚙️ Config
+- `APP_ENV`: environment name; default `dev`
+- `API_PORT`: FastAPI port; default `8000`
+- `DB_URL`: SQLAlchemy DB URL; default `sqlite:///./wallet.db`
+- `ALCHEMY_RPC_URL`: Ethereum RPC (Alchemy) URL; default unset
+- `ONEINCH_BASE_URL`: DEX aggregator base URL; default `https://api.1inch.dev`
+- `COINGECKO_BASE_URL`: price API base URL; default `https://api.coingecko.com/api/v3`
+- `MAX_SLIPPAGE_BPS`: max slippage in basis points; default `50` (0.5%) — Recommended for MVP guardrails: `200` (2%)
+- `MAX_TRADE_SIZE_USD`: per-trade cap; default `250` — Recommended for MVP guardrails: `50`
