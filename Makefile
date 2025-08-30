@@ -19,3 +19,6 @@ fmt:
 
 lint:
 	cd fastapi && ruff check .
+
+seed:
+	cd fastapi && python -m app.seed

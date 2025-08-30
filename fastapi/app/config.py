@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     alchemy_rpc_url: str | None = Field(default=None, alias="ALCHEMY_RPC_URL")
     oneinch_base_url: str = Field(default="https://api.1inch.dev", alias="ONEINCH_BASE_URL")
     coingecko_base_url: str = Field(default="https://api.coingecko.com/api/v3", alias="COINGECKO_BASE_URL")
-    max_slippage_bps: int = Field(default=50, alias="MAX_SLIPPAGE_BPS")
-    max_trade_size_usd: int = Field(default=250, alias="MAX_TRADE_SIZE_USD")
+    max_slippage_bps: int = Field(default=200, alias="MAX_SLIPPAGE_BPS")
+    max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
 
 settings = Settings()

@@ -84,3 +84,9 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(dec)
     return dec
+
+
+@router.get("/decisions", response_model=List[DecisionOut])
+def list_decisions(limit: int = Query(50, ge=1, le=200), db: Session = Depends(get_db)):
+    stmt = select(Decision).order_by(Decision.decided_at.desc()).limit(limit)
+    return db.execute(stmt).scalars().all()

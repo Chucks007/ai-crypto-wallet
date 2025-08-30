@@ -6,6 +6,7 @@ from . import bootstrap  # noqa: F401
 
 from .api.v1.routes_meta import router as meta_router
 from .api.v1.routes_wallet import router as wallet_router
+from .api.v1.routes_approvals import router as approvals_router
 from .db import on_startup, on_shutdown
 
 def create_app() -> FastAPI:
@@ -19,6 +20,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(meta_router, prefix="/v1")
     app.include_router(wallet_router, prefix="/v1")
+    app.include_router(approvals_router, prefix="/v1")
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     return app

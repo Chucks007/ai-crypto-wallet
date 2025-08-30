@@ -44,3 +44,21 @@ class BalanceSnapshotOut(BaseModel):
     source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ApprovalEvaluateIn(BaseModel):
+    asset_from: str
+    asset_to: str
+    suggested_amount_usd: float = Field(ge=0)
+    slippage_bps: int | None = Field(default=None, ge=0)
+    gas_estimate_usd: float | None = Field(default=None, ge=0)
+
+
+class ApprovalEvaluateOut(BaseModel):
+    status: str
+    asset_from: str
+    asset_to: str
+    suggested_amount_usd: float
+    capped_amount_usd: float
+    cap_notes: list[str]
+    violations: list[str]
