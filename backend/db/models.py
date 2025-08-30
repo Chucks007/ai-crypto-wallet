@@ -44,7 +44,7 @@ class BalanceSnapshot(Base):
     __tablename__ = "balance_snapshots"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    captured_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     asset: Mapped[str] = mapped_column(String, nullable=False)
     balance: Mapped[float] = mapped_column(Float, nullable=False)
     usd_price: Mapped[Optional[float]] = mapped_column(Float)
@@ -64,7 +64,7 @@ class Suggestion(Base):
     __tablename__ = "suggestions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     rule: Mapped[str] = mapped_column(String, nullable=False)
     asset_from: Mapped[Optional[str]] = mapped_column(String)
     asset_to: Mapped[Optional[str]] = mapped_column(String)
@@ -89,7 +89,7 @@ class Decision(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     suggestion_id: Mapped[int] = mapped_column(ForeignKey("suggestions.id", ondelete="CASCADE"), nullable=False)
-    decided_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     decision: Mapped[str] = mapped_column(String, nullable=False)
     reason: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -109,7 +109,7 @@ class Trade(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     suggestion_id: Mapped[int] = mapped_column(ForeignKey("suggestions.id", ondelete="CASCADE"), nullable=False)
-    executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String, nullable=False)
     tx_hash: Mapped[Optional[str]] = mapped_column(String, unique=True)
     asset_from: Mapped[Optional[str]] = mapped_column(String)
@@ -136,7 +136,7 @@ class RuntimeFlag(Base):
 
     key: Mapped[str] = mapped_column(String, primary_key=True)
     value: Mapped[str] = mapped_column(String, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self) -> str:  # pragma: no cover - debug helper
         return f"<RuntimeFlag {self.key}={self.value}>"
@@ -156,4 +156,3 @@ def get_session() -> Session:
 def init_db(url: str | None = None) -> None:
     engine = get_engine(url)
     Base.metadata.create_all(engine)
-
