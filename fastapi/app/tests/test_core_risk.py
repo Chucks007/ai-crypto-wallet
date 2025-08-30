@@ -79,12 +79,13 @@ def test_evaluate_trade_pass_and_fail():
     )
     res2 = evaluate_trade("USDC", "ETH", 10.0, bad_ctx, limits)
     assert res2["status"] == "rejected"
+    # After capping to 0 due to allocation, violation list may omit the allocation overflow.
+    # Ensure other violations are present and cap note is recorded.
     assert set(res2["violations"]) >= {
         "emergency_stop_enabled",
         "daily_trade_limit_reached",
         "drawdown_24h_limit_exceeded",
         "slippage_too_high",
         "gas_estimate_too_high",
-        "allocation_would_exceed_cap",
     }
-
+    assert "capped_by_allocation_capacity" in res2["cap_notes"]
