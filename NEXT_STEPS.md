@@ -1,9 +1,6 @@
 # Next Steps
 
 ## High Priority
-- Approval commit flow
-  - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
-  - Optional: persist evaluation result alongside Decision for auditability.
 - Runtime flags API
   - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`).
   - UI control to flip emergency stop.
@@ -14,6 +11,11 @@
   - Loading/error states and toasts.
   - Empty-state messages for lists.
   - Minimal theming and spacing tidy-up.
+
+## Completed
+- Approval commit flow
+  - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
+  - Optional: persist evaluation result alongside Decision for auditability.
 
 ## Medium Priority
 - API contracts and DTOs
@@ -36,4 +38,3 @@
 - CLI slice for quick local suggestions/approvals.
 - Seeder improvements (parameterized sizes; additional assets).
 - Faker-based data generation for web demos.
-
