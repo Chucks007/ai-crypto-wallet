@@ -73,3 +73,13 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
 - `/explain` → explain file/function simply
 
 Answer style: **plan → patch → verify**. Ask at most one clarifying question if needed.
+
+---
+
+## 📝 Migration Notes
+- 2025-08-30: Pydantic v2
+  - Replaced class-based `Config` with `model_config` using `ConfigDict` and `SettingsConfigDict`.
+  - Schemas updated in `fastapi/app/schemas.py`; settings updated in `fastapi/app/config.py`.
+- 2025-08-30: UTC-aware timestamps
+  - SQLAlchemy models now use `DateTime(timezone=True)` for all timestamp columns in `backend/db/models.py`.
+  - API uses `datetime.now(UTC)` for created/decided times; tests updated to seed UTC-aware datetimes.
