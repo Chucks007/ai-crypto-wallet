@@ -7,3 +7,4 @@ export async function createSuggestion(body: any) { const r = await api.post(`/v
 export async function listDecisions(limit = 50) { const r = await api.get(`/v1/decisions`, { params: { limit } }); return r.data; }
 export async function createDecision(body: any) { const r = await api.post(`/v1/decisions`, body); return r.data; }
 export async function evaluateApproval(body: any) { const r = await api.post(`/v1/approvals/evaluate`, body); return r.data; }
+export async function commitApproval(body: any) { const r = await api.post(`/v1/approvals/commit`, body); return r.data; }

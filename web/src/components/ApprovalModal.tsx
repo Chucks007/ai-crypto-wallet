@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { evaluateApproval, createDecision } from "../lib/api";
+import { commitApproval } from "../lib/api";
 
 type Props = {
   suggestion: {
@@ -23,20 +23,18 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
     setLoading(true);
     setError(null);
     try {
-      const res = await evaluateApproval({
+      const commit = await commitApproval({
+        suggestion_id: suggestion.id,
         asset_from: suggestion.asset_from || "USDC",
         asset_to: suggestion.asset_to || "ETH",
         suggested_amount_usd: suggestion.amount_usd || 0,
         slippage_bps: slippageBps,
         gas_estimate_usd: gasUsd,
+        reason: "ui_approval",
       });
-      setResult(res);
-      if (res.status === "approved") {
-        await createDecision({
-          suggestion_id: suggestion.id,
-          decision: "approved",
-          reason: (res.cap_notes || []).join(", "),
-        });
+      // commit.evaluation mirrors evaluate endpoint; reflect it in UI
+      setResult(commit.evaluation);
+      if (commit.created) {
         onDecisionCreated?.();
       }
     } catch (e: any) {
@@ -95,4 +93,3 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
     </div>
   );
 }
-
