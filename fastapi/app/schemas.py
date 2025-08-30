@@ -78,3 +78,23 @@ class ApprovalCommitOut(BaseModel):
     evaluation: ApprovalEvaluateOut
     created: bool
     decision: Optional[DecisionOut] = None
+
+
+class RuntimeFlagOut(BaseModel):
+    key: str
+    value: str
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RuntimeFlagSetIn(BaseModel):
+    value: str
+
+
+class EmergencyStopOut(BaseModel):
+    enabled: bool
+    updated_at: Optional[datetime] = None
+
+
+class EmergencyStopSetIn(BaseModel):
+    enabled: bool

@@ -8,3 +8,6 @@ export async function listDecisions(limit = 50) { const r = await api.get(`/v1/d
 export async function createDecision(body: any) { const r = await api.post(`/v1/decisions`, body); return r.data; }
 export async function evaluateApproval(body: any) { const r = await api.post(`/v1/approvals/evaluate`, body); return r.data; }
 export async function commitApproval(body: any) { const r = await api.post(`/v1/approvals/commit`, body); return r.data; }
+export async function listRuntimeFlags() { const r = await api.get(`/v1/runtime-flags`); return r.data; }
+export async function getEmergencyStop() { const r = await api.get(`/v1/runtime-flags/emergency-stop`); return r.data; }
+export async function setEmergencyStop(enabled: boolean) { const r = await api.put(`/v1/runtime-flags/emergency-stop`, { enabled }); return r.data; }
