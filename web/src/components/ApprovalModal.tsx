@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { commitApproval } from "../lib/api";
+import { useToast } from "./Toast";
 
 type Props = {
   suggestion: {
@@ -18,6 +19,7 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
   const [result, setResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { show } = useToast();
 
   async function handleEvaluateAndMaybeApprove() {
     setLoading(true);
@@ -36,6 +38,9 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
       setResult(commit.evaluation);
       if (commit.created) {
         onDecisionCreated?.();
+      } else {
+        const v = (commit.evaluation?.violations || []).join(", ") || "Not approved";
+        show(`Approval rejected: ${v}`, "error");
       }
     } catch (e: any) {
       setError(String(e));

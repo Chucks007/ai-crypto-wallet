@@ -4,6 +4,7 @@ import Overview from './pages/Overview'
 import Suggestions from './pages/Suggestions'
 import History from './pages/History'
 import Settings from './pages/Settings'
+import { ToastProvider } from './components/Toast'
 
 type Route = 'overview' | 'suggestions' | 'history' | 'settings'
 
@@ -22,20 +23,22 @@ export default function App() {
   }, [])
 
   return (
-    <div style={{ padding: 24, fontFamily: 'Inter, system-ui, Arial, sans-serif' }}>
-      <header style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>AI Crypto Wallet</h2>
-        <nav style={{ display: 'flex', gap: 8 }}>
-          <a href="#/overview">Overview</a>
-          <a href="#/suggestions">Suggestions</a>
-          <a href="#/history">History</a>
-          <a href="#/settings">Settings</a>
-        </nav>
-      </header>
-      {route === 'overview' && <Overview />}
-      {route === 'suggestions' && <Suggestions />}
-      {route === 'history' && <History />}
-      {route === 'settings' && <Settings />}
-    </div>
+    <ToastProvider>
+      <div style={{ padding: 24, fontFamily: 'Inter, system-ui, Arial, sans-serif' }}>
+        <header style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ margin: 0 }}>AI Crypto Wallet</h2>
+          <nav style={{ display: 'flex', gap: 8 }}>
+            <a href="#/overview">Overview</a>
+            <a href="#/suggestions">Suggestions</a>
+            <a href="#/history">History</a>
+            <a href="#/settings">Settings</a>
+          </nav>
+        </header>
+        {route === 'overview' && <Overview />}
+        {route === 'suggestions' && <Suggestions />}
+        {route === 'history' && <History />}
+        {route === 'settings' && <Settings />}
+      </div>
+    </ToastProvider>
   )
 }
