@@ -37,6 +37,7 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
       // commit.evaluation mirrors evaluate endpoint; reflect it in UI
       setResult(commit.evaluation);
       if (commit.created) {
+        show("Decision created", "success");
         onDecisionCreated?.();
       } else {
         const v = (commit.evaluation?.violations || []).join(", ") || "Not approved";
@@ -44,6 +45,7 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
       }
     } catch (e: any) {
       setError(String(e));
+      show("Failed to evaluate or commit approval", "error");
     } finally {
       setLoading(false);
     }
@@ -73,17 +75,19 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
             Slippage (bps)
             <input type="number" value={slippageBps}
               onChange={(e) => setSlippageBps(Number(e.target.value))}
+              disabled={loading}
               style={{ width: "100%" }} />
           </label>
           <label style={{ flex: 1 }}>
             Gas est. (USD)
             <input type="number" value={gasUsd}
               onChange={(e) => setGasUsd(Number(e.target.value))}
+              disabled={loading}
               style={{ width: "100%" }} />
           </label>
         </div>
         <button onClick={handleEvaluateAndMaybeApprove} disabled={loading}>
-          {loading ? "Evaluating…" : "Evaluate & Approve if Safe"}
+          {loading ? "Submitting…" : "Evaluate & Approve if Safe"}
         </button>
         {error && <pre style={{ color: "red", whiteSpace: "pre-wrap" }}>{error}</pre>}
         {result && (

@@ -33,6 +33,11 @@ Date: 2025-08-31
     - Overview (balances + RiskBar), Suggestions (approve modal), History (decisions), Settings.
   - Components: BalanceCard, SuggestionList, ApprovalModal, RiskBar.
   - Settings: Emergency Stop toggle wired to runtime flags endpoints with toasts.
+  - Web polish: loading/error states, toasts, empty states, and theming tidy-up.
+    - Loading indicators and errors with toasts in Overview, Suggestions, History.
+    - Empty states via `EmptyState` component across lists and balances.
+    - Spinner component and minimal CSS tokens in `index.css` for spacing/colors.
+    - Header nav active state and spacing tweaks in `App.tsx`.
 - Tests
   - Core unit tests: indicators and risk.
   - API endpoint tests: health, suggestions/decisions CRUD, balances, approvals (evaluate + commit), runtime flags, trades (quote/execute/list).

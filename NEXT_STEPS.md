@@ -1,12 +1,13 @@
 # Next Steps
 
 ## High Priority
+None at the moment.
+
+## Completed
 - Web polish
   - Loading/error states and toasts.
   - Empty-state messages for lists.
   - Minimal theming and spacing tidy-up.
-
-## Completed
 - Approval commit flow
   - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
   - Optional: persist evaluation result alongside Decision for auditability.

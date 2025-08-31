@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ApprovalModal } from "./ApprovalModal";
+import { EmptyState } from "./EmptyState";
 
 type Suggestion = {
   id: number;
@@ -17,6 +18,9 @@ export function SuggestionList({ items, onDecisionCreated }: { items: Suggestion
   return (
     <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
       <div style={{ fontWeight: 600, marginBottom: 8 }}>Suggestions</div>
+      {items.length === 0 ? (
+        <EmptyState title="No suggestions to review" subtitle="The agent hasn’t proposed any trades yet." />
+      ) : (
       <table style={{ width: "100%", fontSize: 14 }}>
         <thead>
           <tr>
@@ -43,6 +47,7 @@ export function SuggestionList({ items, onDecisionCreated }: { items: Suggestion
           ))}
         </tbody>
       </table>
+      )}
       {open && (
         <ApprovalModal
           suggestion={open}
@@ -53,4 +58,3 @@ export function SuggestionList({ items, onDecisionCreated }: { items: Suggestion
     </div>
   );
 }
-

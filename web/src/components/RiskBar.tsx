@@ -9,7 +9,7 @@ export function RiskBar({
 }) {
   return (
     <div style={{
-      border: "1px solid #eee",
+      border: "1px solid #e5e7eb",
       borderRadius: 8,
       padding: 12,
       background: "#fafafa",
@@ -27,4 +27,3 @@ export function RiskBar({
     </div>
   );
 }
-
