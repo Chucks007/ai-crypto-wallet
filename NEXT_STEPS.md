@@ -1,9 +1,6 @@
 # Next Steps
 
 ## High Priority
-- Runtime flags API
-  - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`).
-  - UI control to flip emergency stop.
 - Trade execution (M3 groundwork)
   - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
   - Log tx lifecycle into `trades` with statuses and errors.
@@ -16,6 +13,9 @@
 - Approval commit flow
   - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
   - Optional: persist evaluation result alongside Decision for auditability.
+- Runtime flags API
+  - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`).
+  - UI control to flip emergency stop.
 
 ## Medium Priority
 - API contracts and DTOs
