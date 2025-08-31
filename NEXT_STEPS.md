@@ -1,9 +1,6 @@
 # Next Steps
 
 ## High Priority
-- Trade execution (M3 groundwork)
-  - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
-  - Log tx lifecycle into `trades` with statuses and errors.
 - Web polish
   - Loading/error states and toasts.
   - Empty-state messages for lists.
@@ -16,6 +13,9 @@
 - Runtime flags API
   - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`).
   - UI control to flip emergency stop.
+- Trade execution (M3 groundwork)
+  - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
+  - Log tx lifecycle into `trades` with statuses and errors.
 
 ## Medium Priority
 - API contracts and DTOs
