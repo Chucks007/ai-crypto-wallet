@@ -14,5 +14,7 @@ class Settings(BaseSettings):
     coingecko_base_url: str = Field(default="https://api.coingecko.com/api/v3", alias="COINGECKO_BASE_URL")
     max_slippage_bps: int = Field(default=200, alias="MAX_SLIPPAGE_BPS")
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
+    # Soft cap for per-asset allocation used in API risk evaluation; set high to avoid blocking small buys
+    max_allocation_pct: float = Field(default=1.0, alias="MAX_ALLOCATION_PCT")
 
 settings = Settings()

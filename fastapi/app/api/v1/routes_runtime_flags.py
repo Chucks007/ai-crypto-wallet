@@ -15,6 +15,31 @@ from backend.db.models import RuntimeFlag
 router = APIRouter(tags=["runtime_flags"])
 
 
+@router.get("/runtime-flags/emergency-stop", response_model=EmergencyStopOut)
+def get_emergency_stop(db: Session = Depends(get_db)):
+    flag = db.get(RuntimeFlag, "emergency_stop")
+    if not flag:
+        return {"enabled": False, "updated_at": None}
+    enabled = flag.value.lower() in {"1", "true", "on", "yes"}
+    return {"enabled": enabled, "updated_at": flag.updated_at}
+
+
+@router.put("/runtime-flags/emergency-stop", response_model=EmergencyStopOut)
+def set_emergency_stop(payload: EmergencyStopSetIn, db: Session = Depends(get_db)):
+    flag = db.get(RuntimeFlag, "emergency_stop")
+    now = datetime.now(UTC)
+    value = "true" if payload.enabled else "false"
+    if not flag:
+        flag = RuntimeFlag(key="emergency_stop", value=value, updated_at=now)
+        db.add(flag)
+    else:
+        flag.value = value
+        flag.updated_at = now
+    db.commit()
+    db.refresh(flag)
+    return {"enabled": payload.enabled, "updated_at": flag.updated_at}
+
+
 @router.get("/runtime-flags", response_model=List[RuntimeFlagOut])
 def list_runtime_flags(db: Session = Depends(get_db)):
     stmt = select(RuntimeFlag)
@@ -43,29 +68,3 @@ def set_runtime_flag(key: str, payload: RuntimeFlagSetIn, db: Session = Depends(
     db.commit()
     db.refresh(flag)
     return flag
-
-
-@router.get("/runtime-flags/emergency-stop", response_model=EmergencyStopOut)
-def get_emergency_stop(db: Session = Depends(get_db)):
-    flag = db.get(RuntimeFlag, "emergency_stop")
-    if not flag:
-        return {"enabled": False, "updated_at": None}
-    enabled = flag.value.lower() in {"1", "true", "on", "yes"}
-    return {"enabled": enabled, "updated_at": flag.updated_at}
-
-
-@router.put("/runtime-flags/emergency-stop", response_model=EmergencyStopOut)
-def set_emergency_stop(payload: EmergencyStopSetIn, db: Session = Depends(get_db)):
-    flag = db.get(RuntimeFlag, "emergency_stop")
-    now = datetime.now(UTC)
-    value = "true" if payload.enabled else "false"
-    if not flag:
-        flag = RuntimeFlag(key="emergency_stop", value=value, updated_at=now)
-        db.add(flag)
-    else:
-        flag.value = value
-        flag.updated_at = now
-    db.commit()
-    db.refresh(flag)
-    return {"enabled": payload.enabled, "updated_at": flag.updated_at}
-

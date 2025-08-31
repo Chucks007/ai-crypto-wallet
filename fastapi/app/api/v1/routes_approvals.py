@@ -89,6 +89,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
     limits = RiskLimits(
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
+        max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
     )
     result = evaluate_trade(
         asset_from=payload.asset_from,
@@ -128,6 +129,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
     limits = RiskLimits(
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
+        max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
     )
     evaluation = evaluate_trade(
         asset_from=payload.asset_from,
