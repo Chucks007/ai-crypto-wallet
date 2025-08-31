@@ -8,6 +8,7 @@ from .api.v1.routes_meta import router as meta_router
 from .api.v1.routes_wallet import router as wallet_router
 from .api.v1.routes_approvals import router as approvals_router
 from .api.v1.routes_runtime_flags import router as flags_router
+from .api.v1.routes_trades import router as trades_router
 from .db import on_startup, on_shutdown
 
 def create_app() -> FastAPI:
@@ -23,6 +24,7 @@ def create_app() -> FastAPI:
     app.include_router(wallet_router, prefix="/v1")
     app.include_router(approvals_router, prefix="/v1")
     app.include_router(flags_router, prefix="/v1")
+    app.include_router(trades_router, prefix="/v1")
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     return app

@@ -98,3 +98,49 @@ class EmergencyStopOut(BaseModel):
 
 class EmergencyStopSetIn(BaseModel):
     enabled: bool
+
+
+# Trades / Execution
+class TradeQuoteIn(BaseModel):
+    asset_from: str
+    asset_to: str
+    amount_usd: float = Field(ge=0)
+    slippage_bps: int | None = Field(default=None, ge=0)
+    gas_estimate_usd: float | None = Field(default=None, ge=0)
+
+
+class TradeQuoteOut(BaseModel):
+    asset_from: str
+    asset_to: str
+    amount_usd: float
+    estimated_to_amount_usd: float
+    effective_slippage_bps: int
+    gas_estimate_usd: float
+    dry_run: bool = True
+
+
+class TradeExecuteIn(BaseModel):
+    suggestion_id: int
+    asset_from: str
+    asset_to: str
+    amount_usd: float = Field(ge=0)
+    slippage_bps: int | None = Field(default=None, ge=0)
+    gas_estimate_usd: float | None = Field(default=None, ge=0)
+    dry_run: bool = True
+
+
+class TradeOut(BaseModel):
+    id: int
+    suggestion_id: int
+    executed_at: Optional[datetime]
+    status: str
+    tx_hash: Optional[str]
+    asset_from: Optional[str]
+    amount_from: Optional[float]
+    asset_to: Optional[str]
+    amount_to: Optional[float]
+    slippage_bps: Optional[int]
+    gas_est_usd: Optional[float]
+    error: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
