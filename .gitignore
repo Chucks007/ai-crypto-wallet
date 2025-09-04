@@ -8,6 +8,10 @@ __pycache__/
 *.db
 *.log
 
+# Pytest cache
+.pytest_cache/
+fastapi/.pytest_cache/
+
 # Node
 node_modules/
 web/node_modules/

@@ -38,7 +38,6 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
 - Stop if portfolio down **>15% in 24h**
 - Reject if slippage **>2%**
 - Reject if gas est. **>$5**
- - Cap per-asset allocation at 5% (avoid concentration)
 - **Emergency stop button required**
 
 ---

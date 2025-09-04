@@ -12,7 +12,7 @@ Date: 2025-08-31
   - Made ORM timestamps timezone-aware (`DateTime(timezone=True)`).
 - Core logic
   - Indicators: RSI (Wilder), rebalance drift/actions, profit-take signal (`backend/core/indicators.py`).
-  - Risk guardrails: caps/violations + `evaluate_trade` (`backend/core/risk.py`).
+  - Risk guardrails: caps/violations + `evaluate_trade` (`backend/core/risk.py`). Added minimum notional ($5) to reject dust trades and skip allocation checks when portfolio is empty.
   - Consolidated exports in `backend/core/__init__.py`.
 - FastAPI backend
   - App wiring, CORS, startup DB init, DB dependency (`fastapi/app/main.py`, `fastapi/app/db.py`).
@@ -24,7 +24,8 @@ Date: 2025-08-31
     - Runtime flags: `GET/PUT /v1/runtime-flags`, `GET/PUT /v1/runtime-flags/emergency-stop`.
     - Trades: `POST /v1/trades/quote`, `POST /v1/trades/execute` (dry-run confirms; real exec placeholder), `GET /v1/trades`.
   - Config defaults aligned to guardrails (`MAX_TRADE_SIZE_USD=50`, `MAX_SLIPPAGE_BPS=200`).
-  - Added `MAX_ALLOCATION_PCT` (default 1.0) used by approvals to avoid over-blocking small buys.
+  - Added `MAX_ALLOCATION_PCT` (default 0.05) and wired into approvals to enforce 5% per-asset cap.
+  - Execution flags: `EXECUTION_ENABLED` (default false) and `EXECUTION_ALLOWED_CHAIN_IDS`; `/v1/trades/execute` respects flag (disabled path returns `execution_not_configured`).
   - Seed script: `fastapi/app/seed.py`. Make target: `make seed`.
   - Added SQLAlchemy dependency to `fastapi/pyproject.toml`.
 - Frontend (web)
