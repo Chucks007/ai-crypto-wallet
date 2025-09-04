@@ -15,6 +15,7 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
   - Web dashboard (React+TS, FastAPI backend)
   - Manual approval of suggestions
   - SQLite tracking of decisions/outcomes
+  - Auto-decider loop (opt-in) via `auto_mode` flag
   - Success: approve/reject trades via browser
 
 - **Month 3: Execution**

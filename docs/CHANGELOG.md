@@ -9,6 +9,7 @@ Unreleased
 - Risk: enforce 5% per-asset cap in approvals; add minimum notional ($5) and skip allocation checks when portfolio is empty.
 - Execution: introduced `EXECUTION_ENABLED` and `EXECUTION_ALLOWED_CHAIN_IDS`; disabled path returns `execution_not_configured`.
 - Python: standardized on 3.11+ (tested 3.13); updated pyproject and Ruff.
+ - Auto-decider: added one-shot worker (`fastapi/app/worker.py`), Make target `make auto`, and secret-gated endpoint `POST /v1/auto-decider/run`.
 
 2025-08-31
 - Added: initial database schema (`backend/db/schema.sql`) and SQLAlchemy models with indexes/constraints.

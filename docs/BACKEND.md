@@ -72,3 +72,19 @@ Base URL: `/v1`
 - GET `/trades?limit=50`
   - 200: list of trades (descending by id)
   - Notes: `limit` in range [1,200], default 50; timestamps UTC ISO‑8601
+
+- GET `/runtime-flags`
+  - 200: list of runtime flags `{ key, value, updated_at }`
+
+- GET `/runtime-flags/emergency-stop` and PUT `/runtime-flags/emergency-stop`
+  - GET 200: `{ enabled: boolean, updated_at: <timestamp|null> }`
+  - PUT request: `{ enabled: true|false }`
+
+- GET `/runtime-flags/{key}` and PUT `/runtime-flags/{key}`
+  - Generic access to flags like `auto_mode` via `{ "value": "true|false|..." }`
+
+- POST `/auto-decider/run`
+  - Headers: `X-Admin-Secret: <value>` (must match `AUTO_DECIDER_SECRET` env; if unset, endpoint is disabled)
+  - Query: `execute_dry_run` (default true), `limit` (default 50)
+  - 200: `{ "skipped": bool, "reason"?: string, "scanned"?: int, "approved"?: int, "executed"?: int }`
+  - Notes: triggers the one-shot auto-decider worker; respects `auto_mode` and `emergency_stop` flags; intended for dev-only use.

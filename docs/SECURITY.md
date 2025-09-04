@@ -19,4 +19,4 @@ Implementation Notes
 - Approvals API applies guardrails and caps suggested amount to remaining allocation capacity. Minimum notional ($5) rejects dust trades.
 - Execution defaults to dry-run; when `dry_run=false` and execution is disabled, API returns `execution_not_configured`.
 - Config is via env (`.env.example` lists relevant flags).
-
+ - Auto-decider HTTP trigger (`POST /v1/auto-decider/run`) is secret-gated via `AUTO_DECIDER_SECRET` and intended for development use only. Prefer external schedulers (cron/systemd) for periodic runs.
