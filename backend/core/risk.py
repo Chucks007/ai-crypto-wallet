@@ -12,6 +12,7 @@ class RiskLimits:
     max_slippage_bps: int = 200          # ≤ 2% slippage
     max_gas_usd: float = 5.0             # ≤ $5 gas
     max_drawdown_24h_pct: float = 0.15   # stop if down >15% in 24h
+    min_trade_usd: float = 5.0           # reject dust trades below this notional
 
 
 @dataclass(frozen=True)
@@ -43,15 +44,16 @@ def cap_trade_amount_usd(
         amount = limits.max_trade_usd
         notes.append(f"capped_by_trade_limit_${limits.max_trade_usd:.2f}")
 
-    # Allocation capacity
+    # Allocation capacity (skip if portfolio unknown/zero)
     port = max(0.0, ctx.portfolio_usd)
-    curr_w = max(0.0, ctx.asset_allocations.get(asset_to, 0.0))
-    target_cap_value = limits.max_allocation_pct * port
-    current_value = curr_w * port
-    remaining_capacity = max(0.0, target_cap_value - current_value)
-    if amount > remaining_capacity:
-        amount = remaining_capacity
-        notes.append("capped_by_allocation_capacity")
+    if port > 0.0:
+        curr_w = max(0.0, ctx.asset_allocations.get(asset_to, 0.0))
+        target_cap_value = limits.max_allocation_pct * port
+        current_value = curr_w * port
+        remaining_capacity = max(0.0, target_cap_value - current_value)
+        if amount > remaining_capacity:
+            amount = remaining_capacity
+            notes.append("capped_by_allocation_capacity")
 
     return amount, notes
 
@@ -99,6 +101,9 @@ def evaluate_trade(
     """
     capped_amount, cap_notes = cap_trade_amount_usd(suggested_amount_usd, asset_to, ctx, limits)
     violations = risk_violations(asset_to, capped_amount, ctx, limits)
+    # Reject dust trades if they would be below minimum notional (only when >0 post-cap)
+    if 0.0 < capped_amount < limits.min_trade_usd:
+        violations = list(violations) + ["below_minimum_notional"]
     status = "approved" if (capped_amount > 0 and not violations) else "rejected"
     return {
         "status": status,
@@ -119,4 +124,3 @@ __all__ = [
     "risk_violations",
     "evaluate_trade",
 ]
-
