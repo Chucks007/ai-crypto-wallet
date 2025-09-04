@@ -27,7 +27,7 @@ This doc tracks alignment decisions to settle before executing items in `NEXT_ST
 - Config Defaults vs Docs
   - Proposed: unify docs to match code: `MAX_SLIPPAGE_BPS=200 (2%)`, `MAX_TRADE_SIZE_USD=50`; explicitly document `MAX_ALLOCATION_PCT`.
   - Actions:
-    - [ ] Update `GEMINI.md` Config section to those defaults and include `MAX_ALLOCATION_PCT=0.05`.
+    - [x] Update `GEMINI.md` Config section to those defaults and include `MAX_ALLOCATION_PCT=0.05`.
 
 - API Docs Currency
   - Proposed: promote approvals endpoints from “Planned” to “Current”; list trades endpoints; include `POST /v1/approvals/commit` in Runbook.

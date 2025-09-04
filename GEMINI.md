@@ -110,5 +110,10 @@ Note: Keep migration notes here while scope is small; migrate to `docs/CHANGELOG
 - `ALCHEMY_RPC_URL`: Ethereum RPC (Alchemy) URL; default unset
 - `ONEINCH_BASE_URL`: DEX aggregator base URL; default `https://api.1inch.dev`
 - `COINGECKO_BASE_URL`: price API base URL; default `https://api.coingecko.com/api/v3`
-- `MAX_SLIPPAGE_BPS`: max slippage in basis points; default `50` (0.5%) — Recommended for MVP guardrails: `200` (2%)
-- `MAX_TRADE_SIZE_USD`: per-trade cap; default `250` — Recommended for MVP guardrails: `50`
+- `MAX_SLIPPAGE_BPS`: max slippage in basis points; default `200` (2%)
+- `MAX_TRADE_SIZE_USD`: per-trade cap; default `50`
+- `MAX_ALLOCATION_PCT`: per-asset allocation cap; default `0.05` (5%)
+- `EXECUTION_ENABLED`: enable server-side execution; default `false` (dev/testnet only)
+- `EXECUTION_ALLOWED_CHAIN_IDS`: allowed chain IDs when execution is enabled; default `"11155111,84532"` (Sepolia, Base Sepolia)
+
+Note: Override via env; see `.env.example`.
