@@ -16,6 +16,7 @@ from ...schemas import (
     BalanceSnapshotOut,
 )
 from backend.db.models import Suggestion, Decision, BalanceSnapshot
+from ...logging_util import log_event
 
 
 router = APIRouter(tags=["wallet"])
@@ -66,6 +67,14 @@ def create_suggestion(payload: SuggestionIn, db: Session = Depends(get_db)):
     db.add(sug)
     db.commit()
     db.refresh(sug)
+    log_event(
+        "suggestion_created",
+        id=sug.id,
+        rule=sug.rule,
+        asset_from=sug.asset_from,
+        asset_to=sug.asset_to,
+        amount_usd=sug.amount_usd,
+    )
     return sug
 
 
@@ -83,6 +92,12 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
     db.add(dec)
     db.commit()
     db.refresh(dec)
+    log_event(
+        "decision_created",
+        id=dec.id,
+        suggestion_id=sug.id,
+        decision=dec.decision,
+    )
     return dec
 
 

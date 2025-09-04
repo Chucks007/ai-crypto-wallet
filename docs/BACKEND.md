@@ -88,3 +88,6 @@ Base URL: `/v1`
   - Query: `execute_dry_run` (default true), `limit` (default 50)
   - 200: `{ "skipped": bool, "reason"?: string, "scanned"?: int, "approved"?: int, "executed"?: int }`
   - Notes: triggers the one-shot auto-decider worker; respects `auto_mode` and `emergency_stop` flags; sets `auto_last_start`/`auto_last_finish` runtime flags and skips if a recent run started <20s ago; intended for dev-only use.
+- GET `/metrics/daily`
+  - 200: `{ today: { suggestions: number, decisions: {..}, trades: {..} }, last_worker: { last_start: string|null, last_finish: string|null } }`
+  - Notes: counts for current UTC day; trades grouped by status using `executed_at` timestamps.

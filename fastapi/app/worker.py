@@ -28,6 +28,7 @@ from .api.v1.routes_trades import execute_trade
 
 from backend.core import RiskContext, RiskLimits, evaluate_trade
 from backend.db.models import BalanceSnapshot, RuntimeFlag, Suggestion, Decision, Trade
+from .logging_util import log_event
 
 MIN_INTERVAL_SECONDS = 20  # simple guard to avoid overlapping runs
 
@@ -217,7 +218,9 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
                     pass
 
         _set_flag_value(db, "auto_last_finish", datetime.now(UTC).isoformat())
-        return {"skipped": False, "scanned": scanned, "approved": approved, "executed": executed}
+        summary = {"skipped": False, "scanned": scanned, "approved": approved, "executed": executed}
+        log_event("auto_decider_summary", **summary)
+        return summary
     finally:
         db.close()
 

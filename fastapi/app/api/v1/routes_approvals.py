@@ -20,6 +20,7 @@ from backend.db.models import BalanceSnapshot, RuntimeFlag, Trade, Suggestion, D
 from ...config import settings
 from fastapi import HTTPException
 from datetime import datetime
+from ...logging_util import log_event
 
 
 router = APIRouter(tags=["approvals"])
@@ -98,6 +99,18 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         ctx=ctx,
         limits=limits,
     )
+    try:
+        log_event(
+            "approval_evaluated",
+            asset_from=payload.asset_from,
+            asset_to=payload.asset_to,
+            suggested_amount_usd=payload.suggested_amount_usd,
+            status=result.get("status"),
+            capped_amount_usd=result.get("capped_amount_usd"),
+            violations=result.get("violations"),
+        )
+    except Exception:
+        pass
     # evaluate_trade returns a dict; Pydantic model will validate keys in response model
     return result  # type: ignore[return-value]
 
@@ -176,6 +189,13 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
     db.add(dec)
     db.commit()
     db.refresh(dec)
+    log_event(
+        "decision_created",
+        id=dec.id,
+        suggestion_id=sug.id,
+        decision=dec.decision,
+        capped_amount_usd=evaluation.get("capped_amount_usd"),
+    )
 
     # Shape to DecisionOut using Pydantic's from_attributes in response_model
     return {

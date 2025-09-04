@@ -9,6 +9,7 @@ from sqlalchemy import select
 from ...db import get_db
 from ...schemas import TradeQuoteIn, TradeQuoteOut, TradeExecuteIn, TradeOut
 from ...config import settings
+from ...logging_util import log_event
 from backend.db.models import Trade, Suggestion
 
 
@@ -65,6 +66,14 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         trade.tx_hash = f"dryrun-{int(now.timestamp())}-{trade.id}"
         db.commit()
         db.refresh(trade)
+        log_event(
+            "trade_executed",
+            id=trade.id,
+            suggestion_id=sug.id,
+            status=trade.status,
+            dry_run=True,
+            tx_hash=trade.tx_hash,
+        )
         return trade
 
     # Real execution path
@@ -75,6 +84,14 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         trade.executed_at = now
         db.commit()
         db.refresh(trade)
+        log_event(
+            "trade_executed",
+            id=trade.id,
+            suggestion_id=sug.id,
+            status=trade.status,
+            dry_run=False,
+            error=trade.error,
+        )
         return trade
 
     # If enabled but no integration wired yet, mark as not configured
@@ -83,6 +100,14 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
     trade.executed_at = now
     db.commit()
     db.refresh(trade)
+    log_event(
+        "trade_executed",
+        id=trade.id,
+        suggestion_id=sug.id,
+        status=trade.status,
+        dry_run=False,
+        error=trade.error,
+    )
     return trade
 
 
