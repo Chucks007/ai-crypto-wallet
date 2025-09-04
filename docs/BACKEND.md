@@ -87,4 +87,4 @@ Base URL: `/v1`
   - Headers: `X-Admin-Secret: <value>` (must match `AUTO_DECIDER_SECRET` env; if unset, endpoint is disabled)
   - Query: `execute_dry_run` (default true), `limit` (default 50)
   - 200: `{ "skipped": bool, "reason"?: string, "scanned"?: int, "approved"?: int, "executed"?: int }`
-  - Notes: triggers the one-shot auto-decider worker; respects `auto_mode` and `emergency_stop` flags; intended for dev-only use.
+  - Notes: triggers the one-shot auto-decider worker; respects `auto_mode` and `emergency_stop` flags; sets `auto_last_start`/`auto_last_finish` runtime flags and skips if a recent run started <20s ago; intended for dev-only use.

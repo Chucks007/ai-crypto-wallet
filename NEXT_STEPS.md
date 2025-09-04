@@ -1,12 +1,6 @@
 # Next Steps
 
 ## High Priority
-- Auto-decider integration polish
-  - Web: add Settings toggle for `auto_mode`; show current state.
-  - Tests: unit test `run_once` and `POST /v1/auto-decider/run` (happy path, skipped cases, secret guard).
-  - Concurrency: simple guard to avoid overlapping runs (skip if another run started <N sec ago).
-- Runtime flag: `auto_mode`
-  - API: done via runtime-flags endpoints; add Web toggle (above).
 - Observability baseline
   - Structured logs for suggestion → evaluation → decision → trade.
   - Simple metrics endpoints: daily counts (suggestions, approvals by status, trades by status) + last worker run.
@@ -41,6 +35,10 @@
 
 
 ## Completed
+- Auto-decider integration polish
+  - Web: Settings toggle for `auto_mode`; shows current state and last start/finish.
+  - Tests: unit tests for `run_once` and `POST /v1/auto-decider/run` (happy path, skipped cases, secret guard).
+  - Concurrency: recent-run guard added (skips if another run started < 20s ago).
 - Auto-decider loop (opt-in)
   - One-shot worker at `fastapi/app/worker.py` respecting `auto_mode` and `emergency_stop`.
   - Auto-approves safe suggestions and executes dry-run trades for approved ones.
@@ -55,7 +53,7 @@
   - Optional: persist evaluation result alongside Decision for auditability.
 - Runtime flags API
   - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`, `auto_mode`).
-  - UI control to flip emergency stop.
+  - UI controls to flip emergency stop and auto mode.
 - Trade execution (M3 groundwork)
   - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
   - Log tx lifecycle into `trades` with statuses and errors.
