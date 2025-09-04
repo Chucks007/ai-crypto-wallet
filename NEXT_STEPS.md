@@ -1,13 +1,12 @@
 # Next Steps
 
 ## High Priority
-- Auto-decider loop (opt-in)
-  - Background worker scans latest suggestions, evaluates via approvals, and auto-commits when safe.
-  - Respects `emergency_stop` and new `auto_mode` runtime flag; idempotent per suggestion.
-  - Optionally triggers `/v1/trades/execute` with `dry_run=true` to complete the loop.
+- Auto-decider integration polish
+  - Web: add Settings toggle for `auto_mode`; show current state.
+  - Tests: unit test `run_once` and `POST /v1/auto-decider/run` (happy path, skipped cases, secret guard).
+  - Concurrency: simple guard to avoid overlapping runs (skip if another run started <N sec ago).
 - Runtime flag: `auto_mode`
-  - API: reuse runtime-flags endpoints to read/toggle `auto_mode`.
-  - Web: Settings toggle alongside Emergency Stop; show current state.
+  - API: done via runtime-flags endpoints; add Web toggle (above).
 - Observability baseline
   - Structured logs for suggestion → evaluation → decision → trade.
   - Simple metrics endpoints: daily counts (suggestions, approvals by status, trades by status) + last worker run.
@@ -42,6 +41,11 @@
 
 
 ## Completed
+- Auto-decider loop (opt-in)
+  - One-shot worker at `fastapi/app/worker.py` respecting `auto_mode` and `emergency_stop`.
+  - Auto-approves safe suggestions and executes dry-run trades for approved ones.
+  - Make target `make auto` and docs in `docs/RUNBOOK.md`.
+  - Secret-gated HTTP trigger: `POST /v1/auto-decider/run` (requires `AUTO_DECIDER_SECRET`).
 - Web polish
   - Loading/error states and toasts.
   - Empty-state messages for lists.
@@ -50,7 +54,7 @@
   - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
   - Optional: persist evaluation result alongside Decision for auditability.
 - Runtime flags API
-  - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`).
+  - Endpoints to read/toggle `runtime_flags` (e.g., `emergency_stop`, `auto_mode`).
   - UI control to flip emergency stop.
 - Trade execution (M3 groundwork)
   - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
