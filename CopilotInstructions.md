@@ -15,7 +15,7 @@
 - Emergency stop always accessible
 
 ## MVP Milestones Copilot Should Support
-- **Month 1:** CLI + AI signals
+- **Month 1:** CLI + rule-based signals (RPC/testnet ok; no prod signing)
 - **Month 2:** Web dashboard + approvals
 - **Month 3:** Trade execution + monitoring
 - **Month 4:** Notifications + performance reports

@@ -6,7 +6,7 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
 
 ## 📅 MVP Milestones (Month by Month)
 - **Month 1: Foundation**
-  - CLI tool that connects to MetaMask
+  - CLI for rule-based signals (RPC/testnet ok; no prod signing)
   - Show balances (ETH, USDC, WBTC)
   - Rule-based signals: RSI<30 → Buy; rebalance drift>15% → Adjust; profit>25% → Take profit
   - Success: sensible CLI suggestions

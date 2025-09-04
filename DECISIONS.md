@@ -44,7 +44,7 @@ This doc tracks alignment decisions to settle before executing items in `NEXT_ST
 - Milestone Scope Wording
   - Proposed: unify Month 1 as “CLI + rule-based signals (RPC/testnet ok), no prod signing”.
   - Actions:
-    - [ ] Align wording in `GEMINI.md` and `CopilotInstructions.md`.
+    - [x] Align wording in `GEMINI.md` and `CopilotInstructions.md`.
 
 ## Notes
 
