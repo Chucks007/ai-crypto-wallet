@@ -2,15 +2,17 @@
 
 Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 
-- Project context: `GEMINI.md`
-- Backend API (FastAPI): `fastapi/GEMINI.md`
-- Frontend guidance (React): `web/GEMINI.md`
-- Runbook: `RUN.md`
+- Project context: `docs/PROJECT.md`
+- Backend API (FastAPI): `docs/BACKEND.md`
+- Frontend guidance (React): `docs/FRONTEND.md`
+- Runbook: `docs/RUNBOOK.md`
+- Security & guardrails: `docs/SECURITY.md`
+- Changelog: `docs/CHANGELOG.md`
 - Roadmap: `NEXT_STEPS.md`
 - Progress summary: `PROGRESS.md`
 
 Quick start
-- Backend: `make api` (see `RUN.md` for setup and tests)
+- Backend: `make api` (see `docs/RUNBOOK.md` for setup and tests)
 - Frontend: `cd web && npm install && npm run dev`
 - API docs: `http://localhost:8000/docs`
 
