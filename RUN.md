@@ -20,6 +20,18 @@ Optional: set UI API base in `web/.env`:
 VITE_API_BASE=http://localhost:8000
 ```
 
+Optional: execution/dev signer env (testnets only; disabled by default) in `.env`:
+
+```
+# Keep disabled unless using a testnet burner
+EXECUTION_ENABLED=false
+EXECUTION_ALLOWED_CHAIN_IDS=11155111,84532
+# If wiring a dev signer later (do not commit real keys):
+RPC_URL=
+CHAIN_ID=
+WALLET_PRIVATE_KEY=
+```
+
 ## Seed demo data
 ```
 make seed
@@ -59,4 +71,4 @@ pytest -q
 - `GET /v1/suggestions`, `POST /v1/suggestions`
 - `POST /v1/approvals/evaluate`
 - `POST /v1/decisions`, `GET /v1/decisions`
-
+ - `POST /v1/approvals/commit`

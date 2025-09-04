@@ -16,5 +16,11 @@ class Settings(BaseSettings):
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
     # Per-asset allocation cap used in API risk evaluation
     max_allocation_pct: float = Field(default=0.05, alias="MAX_ALLOCATION_PCT")
+    # Execution flags (dev/testnet signer only; disabled by default)
+    execution_enabled: bool = Field(default=False, alias="EXECUTION_ENABLED")
+    execution_allowed_chain_ids: str = Field(
+        default="11155111,84532",  # Sepolia, Base Sepolia
+        alias="EXECUTION_ALLOWED_CHAIN_IDS",
+    )
 
 settings = Settings()

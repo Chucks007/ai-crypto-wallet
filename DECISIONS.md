@@ -15,8 +15,14 @@ This doc tracks alignment decisions to settle before executing items in `NEXT_ST
 - Signing Strategy (dev vs prod)
   - Proposed: allow a dev/testnet signer via env vars behind a hard `execution_enabled` flag; production web uses MetaMask or Safe later. Never commit/store keys.
   - Actions:
-    - [ ] Document phase: “dev/testnet EOA signer (flag-gated) → Safe/MetaMask for prod”.
-    - [ ] Add/confirm flags: `execution_enabled=false` default; document in config.
+    - [x] Document phase: “dev/testnet EOA signer (flag-gated) → Safe/MetaMask for prod”.
+    - [x] Add/confirm flags: `EXECUTION_ENABLED=false` default; `EXECUTION_ALLOWED_CHAIN_IDS` documented.
+
+  Notes:
+  - Added `execution_enabled` and `execution_allowed_chain_ids` to `fastapi/app/config.py`.
+  - `routes_trades.execute_trade` respects `execution_enabled` (disabled path fails fast without changing existing tests).
+  - Updated `.env.example` and `RUN.md` with environment examples and warnings.
+  - `GEMINI.md` Security clarifies dev signer constraints and prod approach.
 
 - Config Defaults vs Docs
   - Proposed: unify docs to match code: `MAX_SLIPPAGE_BPS=200 (2%)`, `MAX_TRADE_SIZE_USD=50`; explicitly document `MAX_ALLOCATION_PCT`.

@@ -59,10 +59,13 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
 ---
 
 ## 🔒 Security Rules
-- Never store private keys (MetaMask handles signing).
+- Never store private keys (MetaMask/Safe handles prod signing).
 - Input validation on all user entries.
 - HTTPS in production.
 - No background daemons without kill/stop.
+
+Dev note:
+- A server-side EOA signer may be used on testnets only, behind `EXECUTION_ENABLED=false` by default. Use a burner and small funds; restrict to allowed chains. Production uses MetaMask/Safe.
 
 ---
 

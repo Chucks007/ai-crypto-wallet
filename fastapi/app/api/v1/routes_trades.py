@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from ...db import get_db
 from ...schemas import TradeQuoteIn, TradeQuoteOut, TradeExecuteIn, TradeOut
+from ...config import settings
 from backend.db.models import Trade, Suggestion
 
 
@@ -66,7 +67,17 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         db.refresh(trade)
         return trade
 
-    # Real execution not implemented in this groundwork; mark as failed
+    # Real execution path
+    # Respect execution flag: if disabled, fail fast (keeps legacy error for tests)
+    if not settings.execution_enabled:
+        trade.status = "failed"
+        trade.error = "execution_not_configured"
+        trade.executed_at = now
+        db.commit()
+        db.refresh(trade)
+        return trade
+
+    # If enabled but no integration wired yet, mark as not configured
     trade.status = "failed"
     trade.error = "execution_not_configured"
     trade.executed_at = now
@@ -79,4 +90,3 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
 def list_trades(limit: int = Query(50, ge=1, le=200), db: Session = Depends(get_db)):
     stmt = select(Trade).order_by(Trade.id.desc()).limit(limit)
     return list(db.execute(stmt).scalars())
-
