@@ -32,8 +32,8 @@ This doc tracks alignment decisions to settle before executing items in `NEXT_ST
 - API Docs Currency
   - Proposed: promote approvals endpoints from “Planned” to “Current”; list trades endpoints; include `POST /v1/approvals/commit` in Runbook.
   - Actions:
-    - [ ] Update `fastapi/GEMINI.md` to include: `/approvals/evaluate`, `/approvals/commit`, `/decisions` (list), `/trades` (quote/execute/list).
-    - [ ] Update `RUN.md` “Useful API endpoints” to add `/v1/approvals/commit`.
+    - [x] Update `fastapi/GEMINI.md` to include: `/approvals/evaluate`, `/approvals/commit`, `/decisions` (list), `/trades` (quote/execute/list).
+    - [x] Update `RUN.md` “Useful API endpoints” to add `/v1/approvals/commit`.
 
 - Python Version
   - Proposed: standardize on Python 3.11+ (tested on 3.13).

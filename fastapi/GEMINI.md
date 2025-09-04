@@ -46,6 +46,29 @@ Base URL: `/v1`
   - 404: `{ "detail": "suggestion not found" }`
   - 400: validation error (invalid decision value)
 
-Planned additions
-- POST `/approvals/evaluate` → evaluate risk via core guardrails and return approval decision without executing a trade.
-- GET `/decisions` and GET `/trades` → list historical approvals and executions.
+- GET `/decisions?limit=50`
+  - 200: list of decisions (most recent first)
+  - Notes: `limit` in range [1,200], default 50
+
+- POST `/approvals/evaluate`
+  - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "suggested_amount_usd": 25.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`
+  - 200: `{ "status": "approved|rejected", "capped_amount_usd": 25.0, "cap_notes": ["..."], "violations": ["..."] , ... }`
+  - Notes: applies guardrails (per‑trade cap, allocation cap, slippage/gas, drawdown, daily trades, emergency stop).
+
+- POST `/approvals/commit`
+  - Request: evaluate fields + `suggestion_id`, optional `reason`
+  - 200: `{ "evaluation": { ... }, "created": true|false, "decision": { ... } | null }`
+  - Notes: only creates a Decision when evaluation status is `approved`.
+
+- POST `/trades/quote`
+  - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 50.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`
+  - 200: `{ "estimated_to_amount_usd": <float>, "effective_slippage_bps": <int>, "gas_estimate_usd": <float>, "dry_run": true, ... }`
+
+- POST `/trades/execute`
+  - Request: `{ "suggestion_id": 1, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 10.0, "dry_run": true|false, ... }`
+  - 200 (dry_run=true): trade record with `status="confirmed"` and a fake tx hash
+  - 200 (dry_run=false, execution disabled): trade record with `status="failed"`, `error="execution_not_configured"`
+
+- GET `/trades?limit=50`
+  - 200: list of trades (descending by id)
+  - Notes: `limit` in range [1,200], default 50; timestamps UTC ISO‑8601
