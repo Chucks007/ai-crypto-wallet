@@ -72,3 +72,14 @@ pytest -q
 - `POST /v1/approvals/evaluate`
 - `POST /v1/decisions`, `GET /v1/decisions`
  - `POST /v1/approvals/commit`
+
+## Auto-decider (opt-in)
+- Enable runtime flag:
+  - `PUT /v1/runtime-flags/auto_mode` with `{ "value": "true" }`
+  - Ensure `emergency_stop` is disabled.
+- Run one pass of the worker:
+  - `make auto` (equivalent to `cd fastapi && python -m app.worker`)
+- Behavior:
+  - Scans suggestions without decisions, evaluates risk, and auto-approves safe ones.
+  - Executes a dry-run trade for approved suggestions.
+  - Respects `auto_mode` and `emergency_stop` flags; idempotent per suggestion.

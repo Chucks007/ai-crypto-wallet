@@ -22,3 +22,6 @@ lint:
 
 seed:
 	cd fastapi && python -m app.seed
+
+auto:
+	cd fastapi && python -m app.worker
