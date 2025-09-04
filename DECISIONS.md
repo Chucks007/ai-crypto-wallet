@@ -38,7 +38,8 @@ This doc tracks alignment decisions to settle before executing items in `NEXT_ST
 - Python Version
   - Proposed: standardize on Python 3.11+ (tested on 3.13).
   - Actions:
-    - [ ] Update `RUN.md` prerequisites to 3.11+.
+    - [x] Update `RUN.md` prerequisites to 3.11+.
+    - [x] Set `requires-python >=3.11` and Ruff `target-version=py311` in `fastapi/pyproject.toml`.
 
 - Milestone Scope Wording
   - Proposed: unify Month 1 as “CLI + rule-based signals (RPC/testnet ok), no prod signing”.

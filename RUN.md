@@ -1,7 +1,7 @@
 # Runbook
 
 ## Prerequisites
-- Python 3.10+ (tested with 3.13)
+- Python 3.11+ (tested with 3.13)
 - Node.js 18+ and npm
 
 ## Setup (once)
