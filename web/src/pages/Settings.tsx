@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { getEmergencyStop, setEmergencyStop } from "../lib/api";
+import { getEmergencyStop, setEmergencyStop, getAutoMode, setAutoMode } from "../lib/api";
 import { useToast } from "../components/Toast";
 
 export default function SettingsPage() {
   const apiBase = (import.meta as any).env.VITE_API_BASE || "http://localhost:8000";
   const { show } = useToast();
   const [emergencyStop, setEmergencyStopState] = useState<boolean>(false);
+  const [autoMode, setAutoModeState] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -13,6 +14,7 @@ export default function SettingsPage() {
     getEmergencyStop().then((d) => {
       if (mounted) setEmergencyStopState(!!d.enabled);
     }).catch(() => {/* ignore */});
+    getAutoMode().then((b) => { if (mounted) setAutoModeState(!!b); }).catch(() => {/* ignore */});
     return () => { mounted = false };
   }, []);
 
@@ -25,6 +27,19 @@ export default function SettingsPage() {
       show(next ? "Emergency stop enabled" : "Emergency stop disabled", next ? "error" : "success");
     } catch (e) {
       show("Failed to toggle emergency stop", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function toggleAutoMode() {
+    try {
+      setLoading(true);
+      const next = !autoMode;
+      await setAutoMode(next);
+      setAutoModeState(next);
+      show(next ? "Auto mode enabled" : "Auto mode disabled", next ? "success" : "info");
+    } catch (e) {
+      show("Failed to toggle auto mode", "error");
     } finally {
       setLoading(false);
     }
@@ -53,6 +68,25 @@ export default function SettingsPage() {
             cursor: loading ? "not-allowed" : "pointer",
           }}>
             {emergencyStop ? "Disable" : "Enable"}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, padding: 12, border: "1px solid #e5e7eb", borderRadius: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 600 }}>Auto Mode</div>
+            <div style={{ fontSize: 13, color: "#666" }}>Auto-decider evaluates and commits safe suggestions when enabled.</div>
+          </div>
+          <button onClick={toggleAutoMode} disabled={loading} style={{
+            padding: "8px 12px",
+            borderRadius: 6,
+            border: "1px solid #d1d5db",
+            background: autoMode ? "#dbeafe" : "#f3f4f6",
+            color: autoMode ? "#1e3a8a" : "#111827",
+            cursor: loading ? "not-allowed" : "pointer",
+          }}>
+            {autoMode ? "Disable" : "Enable"}
           </button>
         </div>
       </div>

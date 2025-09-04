@@ -11,3 +11,17 @@ export async function commitApproval(body: any) { const r = await api.post(`/v1/
 export async function listRuntimeFlags() { const r = await api.get(`/v1/runtime-flags`); return r.data; }
 export async function getEmergencyStop() { const r = await api.get(`/v1/runtime-flags/emergency-stop`); return r.data; }
 export async function setEmergencyStop(enabled: boolean) { const r = await api.put(`/v1/runtime-flags/emergency-stop`, { enabled }); return r.data; }
+export async function getAutoMode(): Promise<boolean> {
+  try {
+    const r = await api.get(`/v1/runtime-flags/auto_mode`);
+    const v = String(r.data?.value ?? "").toLowerCase();
+    return ["1","true","on","yes"].includes(v);
+  } catch (e: any) {
+    if (e?.response?.status === 404) return false;
+    throw e;
+  }
+}
+export async function setAutoMode(enabled: boolean) {
+  const r = await api.put(`/v1/runtime-flags/auto_mode`, { value: String(enabled) });
+  return r.data;
+}

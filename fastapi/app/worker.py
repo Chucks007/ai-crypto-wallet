@@ -29,12 +29,31 @@ from .api.v1.routes_trades import execute_trade
 from backend.core import RiskContext, RiskLimits, evaluate_trade
 from backend.db.models import BalanceSnapshot, RuntimeFlag, Suggestion, Decision, Trade
 
+MIN_INTERVAL_SECONDS = 20  # simple guard to avoid overlapping runs
+
 
 def _flag_enabled(db: Session, key: str) -> bool:
     flag = db.get(RuntimeFlag, key)
     if not flag:
         return False
     return flag.value.lower() in {"1", "true", "on", "yes"}
+
+
+def _get_flag_value(db: Session, key: str) -> str | None:
+    flag = db.get(RuntimeFlag, key)
+    return flag.value if flag else None
+
+
+def _set_flag_value(db: Session, key: str, value: str) -> None:
+    now = datetime.now(UTC)
+    flag = db.get(RuntimeFlag, key)
+    if not flag:
+        flag = RuntimeFlag(key=key, value=value, updated_at=now)
+        db.add(flag)
+    else:
+        flag.value = value
+        flag.updated_at = now
+    db.commit()
 
 
 def _latest_values_usd(db: Session) -> Dict[str, float]:
@@ -91,6 +110,17 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             return {"skipped": True, "reason": "emergency_stop"}
         if not _flag_enabled(db, "auto_mode"):
             return {"skipped": True, "reason": "auto_mode_disabled"}
+
+        # Concurrency guard: skip if a recent run started within MIN_INTERVAL_SECONDS
+        last_start = _get_flag_value(db, "auto_last_start")
+        if last_start:
+            try:
+                last_dt = datetime.fromisoformat(last_start)
+                if (datetime.now(UTC) - last_dt).total_seconds() < MIN_INTERVAL_SECONDS:
+                    return {"skipped": True, "reason": "recent_run"}
+            except Exception:
+                pass
+        _set_flag_value(db, "auto_last_start", datetime.now(UTC).isoformat())
 
         values_usd = _latest_values_usd(db)
         port = sum(values_usd.values())
@@ -186,6 +216,7 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
                     # Keep the worker resilient; log to reason on Decision next time if needed.
                     pass
 
+        _set_flag_value(db, "auto_last_finish", datetime.now(UTC).isoformat())
         return {"skipped": False, "scanned": scanned, "approved": approved, "executed": executed}
     finally:
         db.close()
@@ -194,4 +225,3 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
 if __name__ == "__main__":
     summary = run_once(execute_dry_run=True, limit=50)
     print(summary)
-
