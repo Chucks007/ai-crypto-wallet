@@ -72,6 +72,8 @@ pytest -q
 - `POST /v1/approvals/evaluate`
 - `POST /v1/decisions`, `GET /v1/decisions`
  - `POST /v1/approvals/commit`
+ - `GET /v1/trades`, `POST /v1/trades/quote`, `POST /v1/trades/execute`
+ - `GET /v1/metrics/daily`
 
 ## Auto-decider (opt-in)
 - Enable runtime flag:

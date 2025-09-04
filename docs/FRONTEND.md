@@ -15,3 +15,6 @@
 - Must support approve/reject flow.
 - Always show risk metrics alongside trade suggestion.
 - Mobile-friendly, clean dashboard.
+
+## Views
+- History shows recent decisions and trades (including dry-run confirmations).

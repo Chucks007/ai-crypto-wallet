@@ -1,10 +1,9 @@
 # Next Steps
 
 ## High Priority
-- Observability baseline
-  - Structured logs for suggestion → evaluation → decision → trade.
-  - Simple metrics endpoints: daily counts (suggestions, approvals by status, trades by status) + last worker run.
-  - History UI: surface dry-run trades in the list (or add Trades tab).
+- Observability polish
+  - Overview: add a small metrics panel using `GET /v1/metrics/daily`.
+  - Logs: add request IDs or correlation fields if needed.
 
 ## Medium Priority
 - Signer + execution (phase 1: testnet EOA)
@@ -35,6 +34,10 @@
 
 
 ## Completed
+- Observability baseline
+  - Structured JSON logs for suggestion → evaluation → decision → trade.
+  - Metrics: `GET /v1/metrics/daily` (counts + last worker run).
+  - History UI: shows dry-run trades alongside decisions.
 - Auto-decider integration polish
   - Web: Settings toggle for `auto_mode`; shows current state and last start/finish.
   - Tests: unit tests for `run_once` and `POST /v1/auto-decider/run` (happy path, skipped cases, secret guard).
