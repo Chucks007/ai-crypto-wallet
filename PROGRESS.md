@@ -47,6 +47,25 @@ Date: 2025-08-31
   - Updated `GEMINI.md` with DB Model Overview, Config, and Migration Notes.
   - Added API Contracts to `fastapi/GEMINI.md`.
 
+## Finalized Decisions (Docs + Config Alignment)
+- Risk guardrails alignment
+  - Enforced 5% per-asset cap end-to-end. API default `MAX_ALLOCATION_PCT=0.05`.
+  - Added minimum notional ($5) to reject dust trades and skip allocation checks when portfolio is empty.
+  - Updated GEMINI wording to reflect the cap; removed duplicate guardrail bullet.
+- Signing strategy (dev vs prod)
+  - Added `EXECUTION_ENABLED=false` and `EXECUTION_ALLOWED_CHAIN_IDS` flags; server-side signer is dev/testnet only.
+  - `/v1/trades/execute` respects the flag; disabled path returns `execution_not_configured`.
+  - Updated security notes in `GEMINI.md`, `.env.example`, and `RUN.md`.
+- Config defaults vs docs
+  - Unified docs to match code: `MAX_SLIPPAGE_BPS=200`, `MAX_TRADE_SIZE_USD=50`, `MAX_ALLOCATION_PCT=0.05`.
+- API docs currency
+  - Promoted approvals endpoints to current; documented trades endpoints in `fastapi/GEMINI.md`.
+  - Added `POST /v1/approvals/commit` to `RUN.md`.
+- Python version
+  - Standardized on Python 3.11+ (tested on 3.13); pyproject `requires-python >=3.11`; Ruff `target-version=py311`.
+- Milestones wording
+  - Aligned Month 1 scope: “CLI + rule-based signals (RPC/testnet ok; no prod signing)” across docs.
+
 ## Notes
 - Timezone: API and ORM use UTC-aware datetimes. Tests and seeds follow suit.
 - Safety: Risk limits enforced in approval evaluation; decisions are manual.

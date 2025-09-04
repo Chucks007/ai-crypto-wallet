@@ -7,7 +7,6 @@ Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 - Frontend guidance (React): `web/GEMINI.md`
 - Runbook: `RUN.md`
 - Roadmap: `NEXT_STEPS.md`
-- Decisions log: `DECISIONS.md`
 - Progress summary: `PROGRESS.md`
 
 Quick start
@@ -18,4 +17,3 @@ Quick start
 Safety defaults
 - Guardrails: $50/trade, ≤5% per-asset, ≤2 trades/day, stop if drawdown >15% (24h), reject slippage >2%, reject gas est. >$5, emergency stop flag.
 - Execution is dry-run by default; server-side signing is disabled unless explicitly enabled for testnets.
-
