@@ -46,8 +46,9 @@ def _seed_balances_via_override():
         session = next(gen)
         try:
             session.add_all([
-                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="ETH", balance=1.0, usd_price=2000, usd_value=2000, source="test"),
-                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="USDC", balance=500.0, usd_price=1.0, usd_value=500.0, source="test"),
+                # Keep ETH allocation below the 5% cap so approval can succeed
+                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="ETH", balance=0.02, usd_price=2000, usd_value=40.0, source="test"),
+                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="USDC", balance=1960.0, usd_price=1.0, usd_value=1960.0, source="test"),
             ])
             session.commit()
         finally:
@@ -145,4 +146,3 @@ def test_approvals_commit_does_not_create_when_rejected(client: TestClient):
     assert data["decision"] is None
     # Ensure no decisions were created
     assert _count_decisions_for_suggestion(sug_id) == 0
-

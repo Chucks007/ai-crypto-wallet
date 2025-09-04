@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Header, HTTPException
 
 from ...config import settings
-from .. import routes_meta  # noqa: F401  # keep import style parity
 from ...worker import run_once
 
 
@@ -24,4 +23,3 @@ def auto_decider_run(
 
     summary = run_once(execute_dry_run=execute_dry_run, limit=limit)
     return summary
-
