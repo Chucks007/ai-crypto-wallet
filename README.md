@@ -7,6 +7,7 @@ Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 - Frontend guidance (React): `docs/FRONTEND.md`
 - Runbook: `docs/RUNBOOK.md`
 - Security & guardrails: `docs/SECURITY.md`
+- Contributing guide: `docs/CONTRIBUTING.md`
 - Changelog: `docs/CHANGELOG.md`
 - Roadmap: `NEXT_STEPS.md`
 
