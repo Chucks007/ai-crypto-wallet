@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getEmergencyStop, setEmergencyStop, getAutoMode, setAutoMode } from "../lib/api";
+import { getEmergencyStop, setEmergencyStop, getAutoMode, setAutoMode, getRuntimeFlag } from "../lib/api";
 import { useToast } from "../components/Toast";
 
 export default function SettingsPage() {
@@ -8,6 +8,8 @@ export default function SettingsPage() {
   const [emergencyStop, setEmergencyStopState] = useState<boolean>(false);
   const [autoMode, setAutoModeState] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [autoLastStart, setAutoLastStart] = useState<string | null>(null);
+  const [autoLastFinish, setAutoLastFinish] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -15,6 +17,8 @@ export default function SettingsPage() {
       if (mounted) setEmergencyStopState(!!d.enabled);
     }).catch(() => {/* ignore */});
     getAutoMode().then((b) => { if (mounted) setAutoModeState(!!b); }).catch(() => {/* ignore */});
+    getRuntimeFlag("auto_last_start").then((f) => { if (mounted) setAutoLastStart(f?.value ?? null); }).catch(() => {/* ignore */});
+    getRuntimeFlag("auto_last_finish").then((f) => { if (mounted) setAutoLastFinish(f?.value ?? null); }).catch(() => {/* ignore */});
     return () => { mounted = false };
   }, []);
 
@@ -88,6 +92,10 @@ export default function SettingsPage() {
           }}>
             {autoMode ? "Disable" : "Enable"}
           </button>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 13, color: "#555" }}>
+          <div>Last start: <code>{autoLastStart ? new Date(autoLastStart).toLocaleString() : "—"}</code></div>
+          <div>Last finish: <code>{autoLastFinish ? new Date(autoLastFinish).toLocaleString() : "—"}</code></div>
         </div>
       </div>
     </div>

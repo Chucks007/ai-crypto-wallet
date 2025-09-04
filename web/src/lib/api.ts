@@ -25,3 +25,12 @@ export async function setAutoMode(enabled: boolean) {
   const r = await api.put(`/v1/runtime-flags/auto_mode`, { value: String(enabled) });
   return r.data;
 }
+export async function getRuntimeFlag(key: string): Promise<{ key: string; value: string; updated_at: string } | null> {
+  try {
+    const r = await api.get(`/v1/runtime-flags/${encodeURIComponent(key)}`);
+    return r.data;
+  } catch (e: any) {
+    if (e?.response?.status === 404) return null;
+    throw e;
+  }
+}
