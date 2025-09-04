@@ -9,7 +9,6 @@ Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 - Security & guardrails: `docs/SECURITY.md`
 - Changelog: `docs/CHANGELOG.md`
 - Roadmap: `NEXT_STEPS.md`
-- Progress summary: `PROGRESS.md`
 
 Quick start
 - Backend: `make api` (see `docs/RUNBOOK.md` for setup and tests)

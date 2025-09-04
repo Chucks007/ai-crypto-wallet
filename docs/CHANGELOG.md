@@ -10,6 +10,20 @@ Unreleased
 - Execution: introduced `EXECUTION_ENABLED` and `EXECUTION_ALLOWED_CHAIN_IDS`; disabled path returns `execution_not_configured`.
 - Python: standardized on 3.11+ (tested 3.13); updated pyproject and Ruff.
 
+2025-08-31
+- Added: initial database schema (`backend/db/schema.sql`) and SQLAlchemy models with indexes/constraints.
+- Added: core logic — RSI (Wilder), rebalance drift/actions, profit‑take signal, and risk evaluation utilities.
+- Added: FastAPI app wiring (CORS, startup/shutdown, DB dependency) and v1 endpoints:
+  - Meta: `GET /v1/health`
+  - Wallet: `GET/POST /v1/suggestions`, `GET /v1/balances`, `POST /v1/decisions`, `GET /v1/decisions`
+  - Approvals: `POST /v1/approvals/evaluate`, `POST /v1/approvals/commit`
+  - Runtime flags: `GET/PUT /v1/runtime-flags`, `GET/PUT /v1/runtime-flags/emergency-stop`
+  - Trades: `POST /v1/trades/quote`, `POST /v1/trades/execute`, `GET /v1/trades`
+- Added: seed script and Make targets (`make seed`, `make api`, `make dev`).
+- Added: frontend (React+TS) pages (Overview, Suggestions, History, Settings) and components (BalanceCard, SuggestionList, ApprovalModal, RiskBar) with loading/error states and toasts.
+- Added: tests — core (indicators, risk) and API endpoints (health, suggestions/decisions, balances, approvals, runtime flags, trades); 22 tests passing locally.
+- Added: project docs — API contracts, runbook, and context.
+- Changed: API/ORM timestamps use UTC‑aware datetimes.
+
 2025-08-30
 - Pydantic v2 migration; UTC-aware timestamps in ORM and API.
-
