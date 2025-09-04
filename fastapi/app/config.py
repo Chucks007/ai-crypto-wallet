@@ -22,5 +22,7 @@ class Settings(BaseSettings):
         default="11155111,84532",  # Sepolia, Base Sepolia
         alias="EXECUTION_ALLOWED_CHAIN_IDS",
     )
+    # Admin secret to trigger the auto-decider via HTTP (dev-only)
+    auto_decider_secret: str | None = Field(default=None, alias="AUTO_DECIDER_SECRET")
 
 settings = Settings()

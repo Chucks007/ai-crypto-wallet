@@ -77,6 +77,19 @@ pytest -q
 - Enable runtime flag:
   - `PUT /v1/runtime-flags/auto_mode` with `{ "value": "true" }`
   - Ensure `emergency_stop` is disabled.
+- Run one pass locally:
+  - `make auto` (equivalent to `cd fastapi && python -m app.worker`)
+- HTTP trigger (dev-only):
+  - Set `AUTO_DECIDER_SECRET=...` in `.env`
+  - `POST /v1/auto-decider/run` with header `X-Admin-Secret: <value>`
+  - Query params: `execute_dry_run` (default true), `limit` (default 50)
+- Cron example (every 5 minutes):
+  - `*/5 * * * * cd /path/to/repo && . .venv/bin/activate && make auto >> auto-decider.log 2>&1`
+
+## Auto-decider (opt-in)
+- Enable runtime flag:
+  - `PUT /v1/runtime-flags/auto_mode` with `{ "value": "true" }`
+  - Ensure `emergency_stop` is disabled.
 - Run one pass of the worker:
   - `make auto` (equivalent to `cd fastapi && python -m app.worker`)
 - Behavior:
