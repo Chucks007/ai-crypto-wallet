@@ -24,5 +24,12 @@ class Settings(BaseSettings):
     )
     # Admin secret to trigger the auto-decider via HTTP (dev-only)
     auto_decider_secret: str | None = Field(default=None, alias="AUTO_DECIDER_SECRET")
+    # Optional dev/test signer configuration (EOA; testnets only)
+    rpc_url: str | None = Field(default=None, alias="RPC_URL")
+    chain_id: int | None = Field(default=None, alias="CHAIN_ID")
+    wallet_private_key: str | None = Field(default=None, alias="WALLET_PRIVATE_KEY")
+    # Optional API keys
+    oneinch_api_key: str | None = Field(default=None, alias="ONEINCH_API_KEY")
+    tenderly_api_key: str | None = Field(default=None, alias="TENDERLY_API_KEY")
 
 settings = Settings()
