@@ -21,3 +21,6 @@ web/dist/
 # Env
 .env
 .env.*
+
+# VS Code local overrides
+.vscode/*.local.json
