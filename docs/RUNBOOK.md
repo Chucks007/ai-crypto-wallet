@@ -30,6 +30,11 @@ EXECUTION_ALLOWED_CHAIN_IDS=11155111,84532
 RPC_URL=
 CHAIN_ID=
 WALLET_PRIVATE_KEY=
+# Token metadata + pricing used for USD→wei conversion during execution
+# Example: {"11155111":{"ETH":{"decimals":18,"coingecko_id":"ethereum"},"USDC":{"address":"0x...","decimals":6,"usd_price":1.0}}}
+TOKEN_ALLOWLIST_JSON=
+# Optional TTL (seconds) for CoinGecko price cache; default 60
+COINGECKO_PRICE_TTL_SECONDS=60
 ```
 
 ## Seed demo data
@@ -42,6 +47,9 @@ make seed
 make api
 ```
 FastAPI runs on `http://localhost:8000`. Health: `GET /v1/health`.
+
+Tip: if port 8000 is taken (e.g., by Docker), run on another port:
+`API_PORT=8001 make api` and point the UI at that port (`VITE_API_BASE`).
 
 ## Run frontend (Vite)
 In a second terminal:
@@ -98,3 +106,16 @@ pytest -q
   - Scans suggestions without decisions, evaluates risk, and auto-approves safe ones.
   - Executes a dry-run trade for approved suggestions.
   - Respects `auto_mode` and `emergency_stop` flags; idempotent per suggestion.
+
+## Execution (testnet EOA)
+- Enable only on testnets with a burner key and tiny funds.
+- Required env:
+  - `EXECUTION_ENABLED=true`
+  - `RPC_URL`, `CHAIN_ID` (e.g., `11155111` for Sepolia), `WALLET_PRIVATE_KEY`
+  - `TOKEN_ALLOWLIST_JSON` with per-chain token metadata (`decimals`, optional `address`, and either `usd_price` or `coingecko_id`)
+  - Optional: `ONEINCH_API_KEY` for v6 endpoints, `COINGECKO_PRICE_TTL_SECONDS` (default 60)
+- Flow: the backend converts `amount_usd` → base units using allowlist price data, ensures bounded ERC‑20 allowance, builds a 1inch swap, simulates via `eth_call`, then signs and sends.
+- Quick test:
+  1) Create a suggestion: `POST /v1/suggestions` with `{ "rule": "EXEC_DEMO", "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 12.5 }`
+  2) Execute: `POST /v1/trades/execute` with `{ "suggestion_id": <id>, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 12.5, "slippage_bps": 50, "dry_run": false }`
+  3) Watch logs for `trade_amount_converted` and `trade_submitted`. Failures return precise errors (e.g., `token_address_missing`, `token_price_unavailable`).

@@ -65,9 +65,10 @@ Base URL: `/v1`
   - 200: `{ "estimated_to_amount_usd": <float>, "effective_slippage_bps": <int>, "gas_estimate_usd": <float>, "dry_run": true, ... }`
 
 - POST `/trades/execute`
-  - Request: `{ "suggestion_id": 1, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 10.0, "dry_run": true|false, ... }`
+  - Request: `{ "suggestion_id": 1, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 10.0, "slippage_bps": 50, "dry_run": true|false }`
   - 200 (dry_run=true): trade record with `status="confirmed"` and a fake tx hash
   - 200 (dry_run=false, execution disabled): trade record with `status="failed"`, `error="execution_not_configured"`
+  - 200 (dry_run=false, execution enabled): converts `amount_usd` → base units using `TOKEN_ALLOWLIST_JSON` (requires `decimals` and either `usd_price` or `coingecko_id`), ensures bounded ERC‑20 approvals, builds a 1inch swap tx, simulates via `eth_call`, then signs and broadcasts. Precise errors bubble up (e.g., `token_not_allowlisted`, `token_address_missing`, `token_price_unavailable`, `simulation_reverted`).
 
 - GET `/trades?limit=50`
   - 200: list of trades (descending by id)
@@ -91,3 +92,23 @@ Base URL: `/v1`
 - GET `/metrics/daily`
   - 200: `{ today: { suggestions: number, decisions: {..}, trades: {..} }, last_worker: { last_start: string|null, last_finish: string|null } }`
   - Notes: counts for current UTC day; trades grouped by status using `executed_at` timestamps.
+
+---
+
+## Execution Details & Config
+
+- USD→wei conversion
+  - Implemented in backend using per-chain token metadata (`decimals`) and price (`usd_price` or `coingecko_id`).
+  - Native ETH uses 18 decimals and no address; ERC‑20s require checksum `address`.
+  - Conversion uses Decimal math with ROUND_DOWN; tiny notional raises `amount_too_small`.
+- Approvals
+  - Bounded `approve(spender, amount)` sent only when current allowance is insufficient.
+  - Permit2 may be added later; current path avoids infinite approvals.
+- External APIs
+  - 1inch v6 (`ONEINCH_BASE_URL`), optional `ONEINCH_API_KEY` via `Authorization: Bearer <key>`.
+  - CoinGecko (`COINGECKO_BASE_URL`); prices cached in-memory with `COINGECKO_PRICE_TTL_SECONDS` (default 60s).
+- Env variables (selection)
+  - `EXECUTION_ENABLED` (default false) and `EXECUTION_ALLOWED_CHAIN_IDS` (e.g., `11155111,84532`)
+  - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
+  - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, and either `usd_price` or `coingecko_id`
+  - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)

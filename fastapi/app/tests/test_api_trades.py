@@ -16,6 +16,9 @@ if str(FASTAPI_DIR) not in sys.path:
 
 from app.main import app
 from app.db import get_db
+from app.config import settings
+from app.execution.service import ExecutionService
+from app.api.v1 import routes_trades
 from backend.db.models import Base, Suggestion, Trade
 
 
@@ -122,3 +125,42 @@ def test_execute_real_marks_failed_without_integration(client: TestClient):
     assert data["status"] == "failed"
     assert data["error"] == "execution_not_configured"
 
+
+def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClient):
+    sug_id = _insert_suggestion(rule="EXEC_SUCCESS")
+    monkeypatch.setattr(settings, "execution_enabled", True, raising=False)
+    monkeypatch.setattr(settings, "rpc_url", "http://localhost:8545", raising=False)
+    monkeypatch.setattr(settings, "chain_id", 11155111, raising=False)
+    monkeypatch.setattr(settings, "wallet_private_key", "0x01", raising=False)
+
+    class DummySigner:
+        def __init__(self, rpc_url: str, chain_id: int, private_key: str):
+            self.rpc_url = rpc_url
+            self.chain_id = chain_id
+            self.private_key = private_key
+
+    monkeypatch.setattr(routes_trades, "EnvPrivateKeySigner", DummySigner)
+
+    captured: dict = {}
+
+    def fake_execute(self, **kwargs):
+        captured.update(kwargs)
+        return "0xhash"
+
+    monkeypatch.setattr(ExecutionService, "execute_swap", fake_execute, raising=False)
+
+    payload = {
+        "suggestion_id": sug_id,
+        "asset_from": "USDC",
+        "asset_to": "ETH",
+        "amount_usd": 12.5,
+        "slippage_bps": 50,
+        "dry_run": False,
+    }
+
+    r = client.post("/v1/trades/execute", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "submitted"
+    assert data["tx_hash"] == "0xhash"
+    assert captured["amount_usd"] == float(payload["amount_usd"])

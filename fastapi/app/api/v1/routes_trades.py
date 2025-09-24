@@ -106,18 +106,12 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         )
         if not signer.rpc_url:
             raise ExecutionError("rpc_url_missing")
-        # Convert amount_usd to amount_wei is outside scope (requires price); assume caller converted upstream.
-        # For MVP, treat amount_usd as a proxy for amount_wei when executing, or skip if not integer.
-        try:
-            amount_wei = int(payload.amount_usd)
-        except Exception:
-            raise ExecutionError("amount_conversion_required")
 
         service = ExecutionService(signer)
         tx_hash = service.execute_swap(
             asset_from=payload.asset_from,
             asset_to=payload.asset_to,
-            amount_wei=amount_wei,
+            amount_usd=float(payload.amount_usd),
             slippage_bps=payload.slippage_bps or settings.max_slippage_bps,
         )
         trade.status = "submitted"

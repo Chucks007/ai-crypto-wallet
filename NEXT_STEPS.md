@@ -7,9 +7,7 @@
 
 ## Medium Priority
 - Signer + execution (phase 1: testnet EOA)
-  - Signer abstraction (`EnvPrivateKeySigner`) with `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY`.
-  - Execution service: quote → simulate → sign+send (behind `execution_enabled` flag).
-  - Nonce/gas controls and bounded ERC20 approvals (or Permit2).
+  - Remaining: Permit2 (optional), startup validation for `TOKEN_ALLOWLIST_JSON`, per‑asset min trade thresholds, richer UI surfacing (address/chain, price/decimals).
 - Risk hardening
   - Per-asset/day caps, drawdown/circuit breaker, max concurrent trades, token allowlist, slippage ceiling.
 - API contracts and DTOs
@@ -17,7 +15,7 @@
 - Web UX
   - Show wallet address/chain in Settings; expose trades list (with status chips).
 - Security & config
-  - Harden CORS for non-dev; validate inputs (enums for rules/assets); document prod settings.
+  - Harden CORS for non-dev; validate inputs (enums for rules/assets); document prod settings; optional price cache TTL.
 
 ## Low Priority / Later Milestones
 - Smart wallet & custody (phase 2/3)
@@ -60,3 +58,12 @@
 - Trade execution (M3 groundwork)
   - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
   - Log tx lifecycle into `trades` with statuses and errors.
+
+- Signer + execution groundwork
+  - `EnvPrivateKeySigner` abstraction with nonce/fee helpers (EIP‑1559) and bounded ERC‑20 approvals.
+  - `ExecutionService` behind `EXECUTION_ENABLED`, allowed chains enforced.
+  - USD→wei conversion using `TOKEN_ALLOWLIST_JSON` (decimals + `usd_price` or `coingecko_id`).
+  - TTL cache for CoinGecko prices (`COINGECKO_PRICE_TTL_SECONDS`).
+  - `/v1/trades/execute` wired to pass USD amounts to the service (no stubbed casts).
+  - Docs updated: allowlist schema, runbook execution section; `.env.example` sample updated.
+  - Tests added: conversion helper (allowlist, CoinGecko, TTL), execution path happy‑path (monkeypatched).

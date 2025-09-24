@@ -1,40 +1,67 @@
 # Token Allowlist (Testnets)
 
-Define canonical token metadata used by quoting, execution, and UI. Keep this list tight and audited.
+Define canonical token metadata used by quoting, execution, risk, and UI flows. Keep this list tight and audited.
 
-Important
+## Principles
 - Use official deployments when possible; verify addresses on the chain’s explorer and protocol docs.
-- Decimals: ETH/WETH=18, USDC=6, WBTC typically=8 (verify per deployment).
+- Supply accurate decimals (ETH/WETH=18, USDC=6, WBTC typically=8 — always confirm).
+- Provide price data for conversion: either a fixed `usd_price` for testnets or a `coingecko_id` to fetch live pricing.
 - Update `.env`/settings to reflect selected chains (see `docs/PROJECT.md`).
 
-## Proposed targets (dev/test now)
+## Supported chains (initial targets)
 - Sepolia: `11155111`
 - Base Sepolia: `84532`
 
-## JSON template
+## JSON schema
+Each chain maps to a set of token symbols. Every token entry must include:
+- `decimals`: base unit precision (required)
+- `address`: checksum address for ERC-20 tokens; omit or set `null` for native ETH
+- One of `usd_price` (float) or `coingecko_id` (string) so the backend can convert USD → base units
+- Optional metadata such as `symbol`
+
 ```json
 {
-  "11155111": {  
-    "ETH": { "symbol": "ETH", "decimals": 18 },
-    "WETH": { "address": "<TODO_WETH_SEPOLIA>", "decimals": 18 },
-    "USDC": { "address": "<TODO_USDC_SEPOLIA>", "decimals": 6 },
-    "WBTC": { "address": "<TODO_WBTC_SEPOLIA>", "decimals": 8 }
+  "11155111": {
+    "ETH": {
+      "symbol": "ETH",
+      "decimals": 18,
+      "coingecko_id": "ethereum"
+    },
+    "WETH": {
+      "address": "<TODO_WETH_SEPOLIA>",
+      "decimals": 18,
+      "coingecko_id": "weth"
+    },
+    "USDC": {
+      "address": "<TODO_USDC_SEPOLIA>",
+      "decimals": 6,
+      "usd_price": 1.0
+    }
   },
   "84532": {
-    "ETH": { "symbol": "ETH", "decimals": 18 },
-    "WETH": { "address": "<TODO_WETH_BASE_SEPOLIA>", "decimals": 18 },
-    "USDC": { "address": "<TODO_USDC_BASE_SEPOLIA>", "decimals": 6 },
-    "WBTC": { "address": "<TODO_WBTC_BASE_SEPOLIA>", "decimals": 8 }
+    "ETH": {
+      "symbol": "ETH",
+      "decimals": 18,
+      "coingecko_id": "ethereum"
+    },
+    "USDC": {
+      "address": "<TODO_USDC_BASE_SEPOLIA>",
+      "decimals": 6,
+      "usd_price": 1.0
+    }
   }
 }
 ```
 
-## How to verify addresses
-- Check explorer (Etherscan Sepolia, Basescan Base Sepolia) for verified contracts and holders.
-- Prefer canonical protocol docs (e.g., Circle for USDC, Wrapped BTC deployers, WETH9 reference).
-- Confirm pools exist on your DEX of choice on the same chain.
+## Verification checklist
+- Confirm addresses on explorers (Etherscan Sepolia, Basescan) and protocol documentation.
+- Ensure the token has liquidity on your execution route (e.g., 1inch/Uniswap) on the same chain.
+- Double-check decimals and price identifiers before enabling execution.
 
-## Usage in code
-- Use this allowlist to gate quoting/execution to known assets only.
-- Client: display only allowlisted assets and decimals.
-- Server: validate swap requests against chainId + token allowlist.
+## How the backend uses this JSON
+- Validates execution requests against allowlisted assets per chain
+- Converts USD-denominated trade sizes into on-chain base units using provided price data
+- Resolves spender approvals and decimals for ERC-20 tokens
+- Powers UI dropdowns and risk evaluation to keep supported assets consistent
+
+Keep the allowlist versioned and reviewed whenever tokens are added or modified.
