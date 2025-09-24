@@ -47,7 +47,7 @@ Main goals: connect wallet → AI trade suggestions → manual approval → safe
 - Backend: Python 3.11+, FastAPI, SQLite, Pydantic schemas, pytest.
 - Frontend: React + TypeScript, functional components.
 - Style: Small PRs, type hints, clear commit messages.
-- Logging: log every suggestion, approval/rejection, execution result.
+- Logging: log every suggestion, approval/rejection, execution result. Include a `request_id` for HTTP requests (propagated via `X-Request-ID`).
 
 ---
 

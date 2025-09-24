@@ -12,6 +12,9 @@ Unreleased
 - Auto-decider: added one-shot worker (`fastapi/app/worker.py`), Make target `make auto`, and secret-gated endpoint `POST /v1/auto-decider/run`.
   - Worker: added recent-run guard using runtime flags (`auto_last_start`/`auto_last_finish`).
   - Web: added `auto_mode` Settings toggle and last run timestamps.
+ - Observability: request ID middleware (`X-Request-ID`) added; responses include the header and logs include `request_id` for correlation.
+ - Frontend: Overview page gains a small metrics panel backed by `GET /v1/metrics/daily`; RiskBar now reflects `tradesToday` from metrics.
+ - Docs: updated RUNBOOK (request tracing), BACKEND (observability), FRONTEND (metrics panel), and NEXT_STEPS (polish completed).
 
 2025-08-31
 - Added: initial database schema (`backend/db/schema.sql`) and SQLAlchemy models with indexes/constraints.

@@ -112,3 +112,19 @@ Base URL: `/v1`
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
   - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, and either `usd_price` or `coingecko_id`
   - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)
+
+---
+
+## Observability
+
+Structured Logs
+- All business events use structured JSON via `log_event(event, **fields)`.
+- During HTTP requests, logs include a `request_id` field for correlation.
+
+Request Correlation
+- Middleware sets/propagates `X-Request-ID` on every request/response.
+- Clients may provide `X-Request-ID`; if absent, the server generates a UUID4.
+- Access the ID within handlers via `request.state.request_id` (FastAPI `Request`).
+
+Metrics
+- Daily aggregates are exposed via `GET /v1/metrics/daily` (counts for current UTC day) and used by the UI Overview page.

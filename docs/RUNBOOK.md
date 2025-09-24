@@ -83,6 +83,17 @@ pytest -q
  - `GET /v1/trades`, `POST /v1/trades/quote`, `POST /v1/trades/execute`
  - `GET /v1/metrics/daily`
 
+## Request tracing (correlation IDs)
+- Every HTTP request receives a correlation header `X-Request-ID`.
+- You can provide one; otherwise the server generates a UUID4.
+- The server includes the same `X-Request-ID` in the response and attaches it to structured logs as `request_id`.
+
+Example:
+```
+curl -i -H 'X-Request-ID: demo-123' http://localhost:8000/v1/health
+```
+Response will include `X-Request-ID: demo-123`. Backend logs include `{"event":"...","request_id":"demo-123",...}`.
+
 ## Auto-decider (opt-in)
 - Enable runtime flag:
   - `PUT /v1/runtime-flags/auto_mode` with `{ "value": "true" }`

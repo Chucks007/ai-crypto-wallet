@@ -35,3 +35,18 @@ export async function getRuntimeFlag(key: string): Promise<{ key: string; value:
     throw e;
   }
 }
+export type DailyMetrics = {
+  today: {
+    suggestions: number;
+    decisions: Record<string, number>;
+    trades: Record<string, number>;
+  };
+  last_worker: {
+    last_start: string | null;
+    last_finish: string | null;
+  };
+};
+export async function getDailyMetrics(): Promise<DailyMetrics> {
+  const r = await api.get(`/v1/metrics/daily`);
+  return r.data as DailyMetrics;
+}
