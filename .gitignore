@@ -21,6 +21,8 @@ web/dist/
 # Env
 .env
 .env.*
+burner.json
+burner-*.json
 
 # VS Code local overrides
 .vscode/*.local.json
