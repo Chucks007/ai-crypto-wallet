@@ -11,6 +11,7 @@ from app.execution.token_utils import (
     clear_price_cache,
     convert_usd_to_base_units,
     get_token_metadata,
+    validate_allowlist_env,
 )
 
 
@@ -132,3 +133,24 @@ def test_missing_price_raises(monkeypatch):
     meta = get_token_metadata(11155111, "FOO")
     with pytest.raises(ExecutionError):
         convert_usd_to_base_units(10, meta)
+
+
+def test_validate_allowlist_env_requires_env(monkeypatch):
+    monkeypatch.delenv("TOKEN_ALLOWLIST_JSON", raising=False)
+    clear_token_allowlist_cache()
+    with pytest.raises(ExecutionError) as exc:
+        validate_allowlist_env()
+    assert str(exc.value) == "token_allowlist_missing"
+
+
+def test_validate_allowlist_env_happy_path(monkeypatch):
+    _set_allowlist(
+        monkeypatch,
+        {
+            "11155111": {
+                "USDC": {"address": "0x1", "decimals": 6, "usd_price": 1.0},
+                "ETH": {"decimals": 18, "usd_price": 2000.0},
+            }
+        },
+    )
+    validate_allowlist_env()

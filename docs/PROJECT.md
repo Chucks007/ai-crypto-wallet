@@ -116,4 +116,4 @@ Note: Keep migration notes here while scope is small; migrate to `docs/CHANGELOG
 - `EXECUTION_ENABLED`: enable server-side execution; default `false` (dev/testnet only)
 - `EXECUTION_ALLOWED_CHAIN_IDS`: allowed chain IDs when execution is enabled; default `"11155111,84532"` (Sepolia, Base Sepolia)
 
-Note: Override via env; see `.env.example`.
+Note: Override via env; copy `fastapi/.env.example` for local defaults.

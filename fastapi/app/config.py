@@ -1,11 +1,67 @@
+from pathlib import Path
+import os
+
+from dotenv import load_dotenv
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+
+_PYTEST = "PYTEST_CURRENT_TEST" in os.environ
+
+
+def _load_dotenv_files() -> None:
+    """Load environment files for local dev without overriding explicit env."""
+
+    if _PYTEST:
+        return
+
+    fastapi_dir = Path(__file__).resolve().parents[1]
+    repo_root = fastapi_dir.parent
+
+    load_dotenv(fastapi_dir / ".env", override=False)
+    load_dotenv(repo_root / ".env", override=False)
+
+
+_load_dotenv_files()
+
+
+def _determine_env_files() -> tuple[str, ...] | None:
+    """Return env files to load, preferring package-local overrides.
+
+    We support both `fastapi/.env` (package-local) and repository-root `.env`.
+    During pytest runs we deliberately skip the repo-level `.env` so that test
+    expectations aren't affected by local developer overrides like enabling
+    execution or pointing at real RPC URLs.
+    """
+
+    if _PYTEST:
+        return None
+
+    fastapi_dir = Path(__file__).resolve().parents[1]
+    repo_root = fastapi_dir.parent
+
+    candidates: list[Path] = []
+    fastapi_env = fastapi_dir / ".env"
+    if fastapi_env.exists():
+        candidates.append(fastapi_env)
+
+    root_env = repo_root / ".env"
+    if root_env.exists():
+        candidates.append(root_env)
+
+    if not candidates:
+        return None
+    return tuple(str(p) for p in candidates)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_determine_env_files(),
         env_file_encoding="utf-8",
+        extra="ignore",  # Allow unrelated env vars like TOKEN_ALLOWLIST_JSON
     )
+
     app_env: str = Field(default="dev", alias="APP_ENV")
     api_port: int = Field(default=8000, alias="API_PORT")
     db_url: str = Field(default="sqlite:///./wallet.db", alias="DB_URL")

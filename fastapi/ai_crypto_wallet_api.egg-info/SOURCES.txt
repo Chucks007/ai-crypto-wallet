@@ -9,6 +9,7 @@ app/config.py
 app/db.py
 app/logging_util.py
 app/main.py
+app/request_id_middleware.py
 app/schemas.py
 app/seed.py
 app/worker.py
@@ -20,8 +21,11 @@ app/api/v1/routes_runtime_flags.py
 app/api/v1/routes_trades.py
 app/api/v1/routes_wallet.py
 app/execution/__init__.py
+app/execution/errors.py
 app/execution/service.py
 app/execution/signer.py
+app/execution/token_utils.py
+app/tests/conftest.py
 app/tests/test_api_approval.py
 app/tests/test_api_approval_commit.py
 app/tests/test_api_endpoints.py
@@ -31,3 +35,4 @@ app/tests/test_auto_decider.py
 app/tests/test_core_indicators.py
 app/tests/test_core_risk.py
 app/tests/test_health.py
+app/tests/test_token_utils.py

@@ -108,6 +108,7 @@ Base URL: `/v1`
   - 1inch v6 (`ONEINCH_BASE_URL`), optional `ONEINCH_API_KEY` via `Authorization: Bearer <key>`.
   - CoinGecko (`COINGECKO_BASE_URL`); prices cached in-memory with `COINGECKO_PRICE_TTL_SECONDS` (default 60s).
 - Env variables (selection)
+  - Env files: backend auto-loads `fastapi/.env` (and repo `.env` when not under pytest); copy `fastapi/.env.example` for local runs.
   - `EXECUTION_ENABLED` (default false) and `EXECUTION_ALLOWED_CHAIN_IDS` (e.g., `11155111,84532`)
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
   - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, and either `usd_price` or `coingecko_id`

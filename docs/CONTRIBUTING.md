@@ -31,8 +31,8 @@ Examples:
 - `docs(api): document /v1/approvals/commit`
 
 ## Testing & Running
-- Backend setup: see `docs/RUNBOOK.md`.
-- Run backend tests: `cd fastapi && pytest -q`.
+- Backend setup: copy `fastapi/.env.example` to `fastapi/.env`, then see `docs/RUNBOOK.md` for full steps.
+- Run backend tests: `cd fastapi && pytest -q` (tests ignore repo `.env` so defaults stay deterministic).
 - Run API locally: `make api` → http://localhost:8000 (OpenAPI at `/docs`).
 - Run web locally: `cd web && npm install && npm run dev` → http://localhost:5173
 

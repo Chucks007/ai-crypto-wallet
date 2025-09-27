@@ -8,6 +8,7 @@ from fastapi import Depends
 from . import bootstrap  # noqa: F401 - ensure backend import works
 from backend.db import models as db
 from .config import settings
+from .execution.token_utils import validate_allowlist_env
 
 
 engine = db.get_engine(settings.db_url)
@@ -15,6 +16,7 @@ SessionLocal = db.sessionmaker(bind=engine, autoflush=False, autocommit=False, f
 
 
 def on_startup() -> None:
+    validate_allowlist_env()
     db.init_db(settings.db_url)
 
 
@@ -29,4 +31,3 @@ def get_db() -> Generator[db.Session, None, None]:
         yield session
     finally:
         session.close()
-

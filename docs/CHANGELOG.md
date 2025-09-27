@@ -15,6 +15,7 @@ Unreleased
  - Observability: request ID middleware (`X-Request-ID`) added; responses include the header and logs include `request_id` for correlation.
  - Frontend: Overview page gains a small metrics panel backed by `GET /v1/metrics/daily`; RiskBar now reflects `tradesToday` from metrics.
  - Docs: updated RUNBOOK (request tracing), BACKEND (observability), FRONTEND (metrics panel), and NEXT_STEPS (polish completed).
+- Config: backend auto-loads `fastapi/.env` (and optional repo `.env`); pytest ignores local overrides to keep tests hermetic. Added `fastapi/.env.example` and refreshed docs.
 
 2025-08-31
 - Added: initial database schema (`backend/db/schema.sql`) and SQLAlchemy models with indexes/constraints.

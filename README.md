@@ -12,7 +12,7 @@ Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 - Roadmap: `NEXT_STEPS.md`
 
 Quick start
-- Backend: `make api` (see `docs/RUNBOOK.md` for setup and tests)
+- Backend: copy `fastapi/.env.example` to `fastapi/.env`, then `make api` (see `docs/RUNBOOK.md` for setup and tests)
 - Frontend: `cd web && npm install && npm run dev`
 - API docs: `http://localhost:8000/docs`
 

@@ -6,7 +6,7 @@ Define canonical token metadata used by quoting, execution, risk, and UI flows. 
 - Use official deployments when possible; verify addresses on the chain’s explorer and protocol docs.
 - Supply accurate decimals (ETH/WETH=18, USDC=6, WBTC typically=8 — always confirm).
 - Provide price data for conversion: either a fixed `usd_price` for testnets or a `coingecko_id` to fetch live pricing.
-- Update `.env`/settings to reflect selected chains (see `docs/PROJECT.md`).
+- Update `fastapi/.env` (or env vars) to reflect selected chains (see `docs/PROJECT.md`).
 
 ## Supported chains (initial targets)
 - Sepolia: `11155111`

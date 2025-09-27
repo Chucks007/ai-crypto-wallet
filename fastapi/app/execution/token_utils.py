@@ -159,3 +159,23 @@ def _resolve_usd_price(meta: TokenMetadata) -> Decimal:
             _PRICE_CACHE[meta.coingecko_id] = (price_dec, now)
         return price_dec
     raise ExecutionError("token_price_unavailable")
+
+
+def validate_allowlist_env() -> None:
+    """Eagerly parse and validate the token allowlist configuration."""
+    allowlist = _get_allowlist()
+    if not allowlist:
+        raise ExecutionError("token_allowlist_empty")
+
+    for chain_key, tokens in allowlist.items():
+        if not isinstance(tokens, dict):
+            raise ExecutionError("token_allowlist_invalid_json")
+        try:
+            chain_id = int(chain_key)
+        except (TypeError, ValueError) as exc:
+            raise ExecutionError("token_allowlist_chain_invalid") from exc
+        if not tokens:
+            raise ExecutionError("token_allowlist_empty_chain")
+        for symbol in tokens:
+            # Reuse existing metadata loader for per-token validation
+            get_token_metadata(chain_id, symbol)
