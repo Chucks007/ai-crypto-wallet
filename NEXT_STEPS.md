@@ -3,14 +3,12 @@
 ## High Priority
 
 ## Medium Priority
-- Signer + execution (phase 1: testnet EOA)
-  - Remaining: Permit2 (optional), richer UI surfacing (address/chain, price/decimals).
 - Risk hardening
   - Per-asset/day caps, drawdown/circuit breaker, max concurrent trades, token allowlist, slippage ceiling.
 - API contracts and DTOs
   - Add `/v1/decisions` filters (by date/status) and pagination; consistent types in web.
 - Web UX
-  - Show wallet address/chain in Settings; expose trades list (with status chips).
+  - Expose trades list (with status chips) and continue UI polish for approvals/trades.
 - Security & config
   - Harden CORS for non-dev; validate inputs (enums for rules/assets); document prod settings; optional price cache TTL.
 
@@ -58,6 +56,9 @@
 - Trade execution (M3 groundwork)
   - Wire 1inch/Uniswap quoting/execution as a service with dry-run mode.
   - Log tx lifecycle into `trades` with statuses and errors.
+
+- Execution visibility
+  - Settings page surfaces signer address/chain, Permit2 readiness, and token decimals/pricing sourced from `/v1/execution/status` and `/v1/execution/tokens`.
 
 - Signer + execution groundwork
   - `EnvPrivateKeySigner` abstraction with nonce/fee helpers (EIP‑1559) and bounded ERC‑20 approvals.

@@ -162,3 +162,14 @@ class ExecutionStatusOut(BaseModel):
     signer_address: Optional[str]
     signer_error: Optional[str] = None
     permit2: Permit2StatusOut
+
+
+class TokenMetadataOut(BaseModel):
+    chain_id: int
+    symbol: str
+    address: Optional[str] = None
+    decimals: int
+    usd_price: Optional[float] = None
+    price_source: str
+    min_trade_usd: Optional[float] = None
+    coingecko_id: Optional[str] = None

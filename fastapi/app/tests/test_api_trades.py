@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
@@ -230,3 +231,35 @@ def test_execution_status_reports_permit2_ready(monkeypatch, client: TestClient)
     assert data["permit2"]["enabled"] is True
     assert data["permit2"]["ready"] is True
     assert captured["contract_address"].lower() == settings.permit2_contract.lower()
+
+
+def test_execution_tokens_returns_metadata(monkeypatch, client: TestClient):
+    allowlist = {
+        "11155111": {
+            "USDC": {
+                "symbol": "USDC",
+                "decimals": 6,
+                "address": "0xToken1",
+                "usd_price": 1.0,
+                "min_trade_usd": 5.0,
+            },
+            "ETH": {
+                "symbol": "ETH",
+                "decimals": 18,
+                "address": None,
+                "coingecko_id": "ethereum",
+                "min_trade_usd": 10.0,
+            },
+        }
+    }
+    monkeypatch.setenv("TOKEN_ALLOWLIST_JSON", json.dumps(allowlist))
+
+    r = client.get("/v1/execution/tokens")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    assert any(item["symbol"] == "USDC" and item["price_source"] == "static" for item in data)
+    assert any(
+        item["symbol"] == "ETH" and item["price_source"] == "coingecko:ethereum"
+        for item in data
+    )

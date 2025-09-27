@@ -132,6 +132,33 @@ def get_token_min_trade_usd(chain_id: int | None, symbol: str) -> Optional[Decim
     return None
 
 
+def list_allowlist_metadata(chain_id: Optional[int] = None) -> Dict[int, Dict[str, TokenMetadata]]:
+    """Return token metadata for each chain in the allowlist.
+
+    When ``chain_id`` is provided, only metadata for that chain is returned. Raises
+    ``ExecutionError`` if the allowlist is missing or invalid.
+    """
+
+    allowlist = _get_allowlist()
+    result: Dict[int, Dict[str, TokenMetadata]] = {}
+    for chain_key, tokens in allowlist.items():
+        try:
+            cid = int(chain_key)
+        except (TypeError, ValueError) as exc:
+            raise ExecutionError("token_allowlist_chain_invalid") from exc
+        if chain_id is not None and cid != chain_id:
+            continue
+        chain_tokens: Dict[str, TokenMetadata] = {}
+        for symbol in tokens.keys():
+            chain_tokens[symbol.upper()] = get_token_metadata(cid, symbol)
+        result[cid] = chain_tokens
+
+    if chain_id is not None and chain_id not in result:
+        raise ExecutionError("chain_not_allowlisted")
+
+    return result
+
+
 def _get_allowlist() -> Dict[str, Dict[str, Dict[str, Any]]]:
     raw = os.environ.get("TOKEN_ALLOWLIST_JSON")
     if not raw:

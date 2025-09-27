@@ -10,9 +10,17 @@ from sqlalchemy.orm import Session
 from ...config import settings
 from ...db import get_db
 from ...execution import EnvPrivateKeySigner, ExecutionError, ExecutionService, Permit2Authorizer
+from ...execution.token_utils import list_allowlist_metadata
 from ...logging_util import log_event
 from ...risk_helpers import resolve_min_trade_usd
-from ...schemas import ExecutionStatusOut, TradeExecuteIn, TradeOut, TradeQuoteIn, TradeQuoteOut
+from ...schemas import (
+    ExecutionStatusOut,
+    TokenMetadataOut,
+    TradeExecuteIn,
+    TradeOut,
+    TradeQuoteIn,
+    TradeQuoteOut,
+)
 
 
 router = APIRouter(tags=["trades"])
@@ -101,6 +109,40 @@ def execution_status():
             "default_spender": settings.permit2_default_spender,
         },
     )
+
+
+@router.get("/execution/tokens", response_model=list[TokenMetadataOut])
+def execution_tokens(chain_id: int | None = None):
+    try:
+        metadata_map = list_allowlist_metadata(chain_id=chain_id)
+    except ExecutionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    results: list[TokenMetadataOut] = []
+    for cid, tokens in metadata_map.items():
+        for meta in tokens.values():
+            price_source = "unknown"
+            if meta.usd_price is not None:
+                price_source = "static"
+            elif meta.coingecko_id:
+                price_source = f"coingecko:{meta.coingecko_id}"
+
+            results.append(
+                TokenMetadataOut(
+                    chain_id=cid,
+                    symbol=meta.symbol,
+                    address=meta.address,
+                    decimals=meta.decimals,
+                    usd_price=float(meta.usd_price) if meta.usd_price is not None else None,
+                    price_source=price_source,
+                    min_trade_usd=
+                        float(meta.min_trade_usd) if meta.min_trade_usd is not None else None,
+                    coingecko_id=meta.coingecko_id,
+                )
+            )
+
+    results.sort(key=lambda item: (item.chain_id, item.symbol))
+    return results
 
 
 @router.post("/trades/quote", response_model=TradeQuoteOut)

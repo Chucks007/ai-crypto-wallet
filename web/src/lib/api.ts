@@ -50,3 +50,41 @@ export async function getDailyMetrics(): Promise<DailyMetrics> {
   const r = await api.get(`/v1/metrics/daily`);
   return r.data as DailyMetrics;
 }
+
+export type ExecutionStatus = {
+  execution_enabled: boolean;
+  allowed_chain_ids: number[];
+  configured_chain_id: number | null;
+  signer_ready: boolean;
+  signer_address: string | null;
+  signer_error: string | null;
+  permit2: {
+    enabled: boolean;
+    ready: boolean;
+    status: string;
+    contract: string | null;
+    default_spender: string | null;
+  };
+};
+
+export type ExecutionToken = {
+  chain_id: number;
+  symbol: string;
+  address?: string | null;
+  decimals: number;
+  usd_price?: number | null;
+  price_source: string;
+  min_trade_usd?: number | null;
+  coingecko_id?: string | null;
+};
+
+export async function getExecutionStatus(): Promise<ExecutionStatus> {
+  const r = await api.get(`/v1/execution/status`);
+  return r.data as ExecutionStatus;
+}
+
+export async function getExecutionTokens(chainId?: number): Promise<ExecutionToken[]> {
+  const params = typeof chainId === "number" ? { chain_id: chainId } : undefined;
+  const r = await api.get(`/v1/execution/tokens`, params ? { params } : undefined);
+  return r.data as ExecutionToken[];
+}
