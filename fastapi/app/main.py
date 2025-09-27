@@ -3,16 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure repo root is importable so we can import `backend.*`
 from . import bootstrap  # noqa: F401
-
-from .api.v1.routes_meta import router as meta_router
-from .api.v1.routes_wallet import router as wallet_router
 from .api.v1.routes_approvals import router as approvals_router
+from .api.v1.routes_auto_decider import router as auto_router
+from .api.v1.routes_meta import router as meta_router
+from .api.v1.routes_metrics import router as metrics_router
 from .api.v1.routes_runtime_flags import router as flags_router
 from .api.v1.routes_trades import router as trades_router
-from .api.v1.routes_auto_decider import router as auto_router
-from .api.v1.routes_metrics import router as metrics_router
-from .db import on_startup, on_shutdown
+from .api.v1.routes_wallet import router as wallet_router
+from .db import on_shutdown, on_startup
 from .request_id_middleware import RequestIDMiddleware
+
 
 def create_app() -> FastAPI:
     app = FastAPI(title="AI Crypto Wallet API", version="0.1.0")
@@ -34,5 +34,6 @@ def create_app() -> FastAPI:
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     return app
+
 
 app = create_app()

@@ -101,6 +101,7 @@ Base URL: `/v1`
   - Implemented in backend using per-chain token metadata (`decimals`) and price (`usd_price` or `coingecko_id`).
   - Native ETH uses 18 decimals and no address; ERC‑20s require checksum `address`.
   - Conversion uses Decimal math with ROUND_DOWN; tiny notional raises `amount_too_small`.
+  - Optional `min_trade_usd` enforces per-asset minimum notionals; requests below the threshold raise `amount_below_min_trade`.
 - Approvals
   - Bounded `approve(spender, amount)` sent only when current allowance is insufficient.
   - Permit2 may be added later; current path avoids infinite approvals.
@@ -111,7 +112,7 @@ Base URL: `/v1`
   - Env files: backend auto-loads `fastapi/.env` (and repo `.env` when not under pytest); copy `fastapi/.env.example` for local runs.
   - `EXECUTION_ENABLED` (default false) and `EXECUTION_ALLOWED_CHAIN_IDS` (e.g., `11155111,84532`)
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
-  - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, and either `usd_price` or `coingecko_id`
+  - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`
   - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)
 
 ---

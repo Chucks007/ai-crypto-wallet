@@ -1,8 +1,10 @@
-from fastapi import APIRouter
-from pathlib import Path
 import os
+from pathlib import Path
+
+from fastapi import APIRouter
 
 router = APIRouter()
+
 
 def _git_sha() -> str:
     # Prefer env override (useful in restricted sandboxes)
@@ -38,6 +40,7 @@ def _git_sha() -> str:
     except Exception:
         pass
     return "unknown"
+
 
 @router.get("/health")
 def health():

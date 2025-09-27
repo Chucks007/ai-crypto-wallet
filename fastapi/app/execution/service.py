@@ -24,7 +24,9 @@ class ExecutionService:
     signer: EnvPrivateKeySigner
 
     def _allowed_chain(self, chain_id: int) -> bool:
-        allowed = {int(x.strip()) for x in settings.execution_allowed_chain_ids.split(",") if x.strip()}
+        allowed = {
+            int(x.strip()) for x in settings.execution_allowed_chain_ids.split(",") if x.strip()
+        }
         return chain_id in allowed
 
     def _headers(self) -> dict[str, str]:
@@ -126,7 +128,9 @@ class ExecutionService:
         # 1) Approvals (ERC-20 sells only)
         if not src_is_native:
             spender = self._get_1inch_spender(network_chain_id)
-            awaitable_hash = self.signer.ensure_allowance(src_identifier, spender, conversion.base_units)
+            awaitable_hash = self.signer.ensure_allowance(
+                src_identifier, spender, conversion.base_units
+            )
             if awaitable_hash:
                 log_event(
                     "approval_submitted",
@@ -160,7 +164,9 @@ class ExecutionService:
         try:
             self.signer.w3.eth.call(call, "pending")
         except Exception as exc:
-            log_event("swap_simulation_failed", error=str(exc), assetFrom=asset_from, assetTo=asset_to)
+            log_event(
+                "swap_simulation_failed", error=str(exc), assetFrom=asset_from, assetTo=asset_to
+            )
             raise ExecutionError("simulation_reverted") from exc
 
         # 4) Fill fees, gas, nonce and send

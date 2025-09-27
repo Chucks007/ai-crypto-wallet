@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from backend.db.models import Suggestion, Trade
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from ...db import get_db
-from ...schemas import TradeQuoteIn, TradeQuoteOut, TradeExecuteIn, TradeOut
 from ...config import settings
+from ...db import get_db
+from ...execution import EnvPrivateKeySigner, ExecutionError, ExecutionService
 from ...logging_util import log_event
-from ...execution import EnvPrivateKeySigner, ExecutionService, ExecutionError
-from backend.db.models import Trade, Suggestion
-
+from ...risk_helpers import resolve_min_trade_usd
+from ...schemas import TradeExecuteIn, TradeOut, TradeQuoteIn, TradeQuoteOut
 
 router = APIRouter(tags=["trades"])
 
@@ -39,6 +39,10 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
     sug = db.get(Suggestion, payload.suggestion_id)
     if not sug:
         raise HTTPException(status_code=404, detail="suggestion not found")
+
+    min_trade = resolve_min_trade_usd(payload.asset_to)
+    if min_trade is not None and float(payload.amount_usd) < min_trade:
+        raise HTTPException(status_code=400, detail="amount_below_minimum_trade")
 
     now = datetime.now(UTC)
 
@@ -132,7 +136,11 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         trade.status = "failed"
         # Preserve legacy error for misconfiguration to keep tests stable
         err = str(e)
-        trade.error = "execution_not_configured" if err.endswith("not_configured") or err.endswith("missing") else err
+        trade.error = (
+            "execution_not_configured"
+            if err.endswith("not_configured") or err.endswith("missing")
+            else err
+        )
         trade.executed_at = now
         db.commit()
         db.refresh(trade)

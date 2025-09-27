@@ -3,13 +3,12 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Dict
 
+from backend.db.models import Decision, RuntimeFlag, Suggestion, Trade
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from ...db import get_db
-from backend.db.models import Suggestion, Decision, Trade, RuntimeFlag
-
 
 router = APIRouter(tags=["metrics"])
 
@@ -26,8 +25,10 @@ def daily_metrics(db: Session = Depends(get_db)):
     start, end = _utc_day_bounds(now)
 
     # Suggestions today
-    sug_stmt = select(func.count()).select_from(Suggestion).where(
-        Suggestion.created_at >= start, Suggestion.created_at < end
+    sug_stmt = (
+        select(func.count())
+        .select_from(Suggestion)
+        .where(Suggestion.created_at >= start, Suggestion.created_at < end)
     )
     suggestions = int(db.execute(sug_stmt).scalar() or 0)
 
@@ -62,4 +63,3 @@ def daily_metrics(db: Session = Depends(get_db)):
             "last_finish": last_finish.value if last_finish else None,
         },
     }
-

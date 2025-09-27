@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional
 
 from web3 import Web3
 from web3.types import TxParams
@@ -55,7 +55,8 @@ class EnvPrivateKeySigner:
     def sign_and_send(self, tx: TxParams) -> str:
         """Signs and broadcasts a type-2 EIP-1559 transaction.
 
-        Expects fields set: to, data (optional), value (int), gas, maxFeePerGas, maxPriorityFeePerGas.
+        Expects fields set: to, data (optional), value (int), gas,
+        maxFeePerGas, and maxPriorityFeePerGas.
         """
         full_tx: TxParams = {
             "chainId": self.chain_id,
@@ -110,7 +111,9 @@ class EnvPrivateKeySigner:
         if current >= required_amount_wei:
             return None
         # Build approve for exact required amount (bounded approval)
-        data = erc20.encode_abi("approve", args=[Web3.to_checksum_address(spender), required_amount_wei])
+        data = erc20.encode_abi(
+            "approve", args=[Web3.to_checksum_address(spender), required_amount_wei]
+        )
         # Gas + fees
         tx_skeleton: TxParams = {
             "to": Web3.to_checksum_address(token),
@@ -128,4 +131,3 @@ class EnvPrivateKeySigner:
             }
         )
         return self.sign_and_send(tx_skeleton)
-

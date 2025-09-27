@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Auto-decider worker (one-shot).
 
@@ -8,27 +6,30 @@ guardrails as the approvals API, and auto-commits an approved Decision.
 Optionally triggers a dry-run trade execution to complete the loop.
 
 Usage:
-  cd fastapi && python -m app.worker  # one pass
+    cd fastapi && python -m app.worker  # one pass
 
 Gating:
 - Skips work if runtime flag `emergency_stop` is enabled.
 - Skips work unless runtime flag `auto_mode` is enabled.
 """
 
+from __future__ import annotations
+
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Dict
 
-from sqlalchemy import func, select, exists
+from backend.core import RiskContext, RiskLimits, evaluate_trade
+from backend.db.models import BalanceSnapshot, Decision, RuntimeFlag, Suggestion, Trade
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
-from .db import SessionLocal
-from .config import settings
-from .schemas import TradeExecuteIn
 from .api.v1.routes_trades import execute_trade
-
-from backend.core import RiskContext, RiskLimits, evaluate_trade
-from backend.db.models import BalanceSnapshot, RuntimeFlag, Suggestion, Decision, Trade
+from .config import settings
+from .db import SessionLocal
 from .logging_util import log_event
+from .risk_helpers import resolve_min_trade_usd
+from .schemas import TradeExecuteIn
 
 MIN_INTERVAL_SECONDS = 20  # simple guard to avoid overlapping runs
 
@@ -66,13 +67,9 @@ def _latest_values_usd(db: Session) -> Dict[str, float]:
         .group_by(BalanceSnapshot.asset)
         .subquery()
     )
-    stmt = (
-        select(BalanceSnapshot)
-        .join(
-            subq,
-            (BalanceSnapshot.asset == subq.c.asset)
-            & (BalanceSnapshot.captured_at == subq.c.max_ts),
-        )
+    stmt = select(BalanceSnapshot).join(
+        subq,
+        (BalanceSnapshot.asset == subq.c.asset) & (BalanceSnapshot.captured_at == subq.c.max_ts),
     )
     values: Dict[str, float] = {}
     for row in db.execute(stmt).scalars():
@@ -91,12 +88,7 @@ def _recent_trades_count(db: Session) -> int:
 
 def _pending_suggestions(db: Session, limit: int = 50) -> list[Suggestion]:
     exists_dec = exists(select(Decision.id).where(Decision.suggestion_id == Suggestion.id))
-    stmt = (
-        select(Suggestion)
-        .where(~exists_dec)
-        .order_by(Suggestion.created_at.desc())
-        .limit(limit)
-    )
+    stmt = select(Suggestion).where(~exists_dec).order_by(Suggestion.created_at.desc()).limit(limit)
     return list(db.execute(stmt).scalars())
 
 
@@ -126,9 +118,7 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
         values_usd = _latest_values_usd(db)
         port = sum(values_usd.values())
         asset_allocations = (
-            {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()}
-            if port > 0
-            else {}
+            {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
         )
 
         ctx_base = dict(
@@ -140,7 +130,7 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             drawdown_24h_pct=0.0,
             emergency_stop=False,
         )
-        limits = RiskLimits(
+        limits_base = RiskLimits(
             max_trade_usd=float(settings.max_trade_size_usd),
             max_slippage_bps=int(settings.max_slippage_bps),
             max_allocation_pct=float(getattr(settings, "max_allocation_pct", 0.05)),
@@ -156,6 +146,12 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
                 continue
 
             ctx = RiskContext(**ctx_base)
+            asset_min_trade = resolve_min_trade_usd(sug.asset_to) if sug.asset_to else None
+            limits = (
+                replace(limits_base, min_trade_usd=float(asset_min_trade))
+                if asset_min_trade is not None
+                else limits_base
+            )
             eval_res = evaluate_trade(
                 asset_from=sug.asset_from,
                 asset_to=sug.asset_to,

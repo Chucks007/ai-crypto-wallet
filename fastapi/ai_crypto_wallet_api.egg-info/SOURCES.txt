@@ -13,6 +13,7 @@ app/request_id_middleware.py
 app/schemas.py
 app/seed.py
 app/worker.py
+app/risk_helpers.py
 app/api/v1/routes_approvals.py
 app/api/v1/routes_auto_decider.py
 app/api/v1/routes_meta.py

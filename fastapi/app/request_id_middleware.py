@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Callable
-
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .logging_util import set_request_id, new_request_id
+from .logging_util import new_request_id, set_request_id
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -31,4 +29,3 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             set_request_id(None)
         response.headers[self.header_name] = rid
         return response
-

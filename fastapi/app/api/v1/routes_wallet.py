@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC
-from typing import List, Optional
+from datetime import UTC, datetime
+from typing import List
 
+from backend.db.models import BalanceSnapshot, Decision, Suggestion
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ...db import get_db
+from ...logging_util import log_event
 from ...schemas import (
-    SuggestionIn,
-    SuggestionOut,
+    BalanceSnapshotOut,
     DecisionIn,
     DecisionOut,
-    BalanceSnapshotOut,
+    SuggestionIn,
+    SuggestionOut,
 )
-from backend.db.models import Suggestion, Decision, BalanceSnapshot
-from ...logging_util import log_event
-
 
 router = APIRouter(tags=["wallet"])
 

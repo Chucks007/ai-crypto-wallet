@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import Generator
 
-from fastapi import Depends
+from backend.db import models as db
 
 from . import bootstrap  # noqa: F401 - ensure backend import works
-from backend.db import models as db
 from .config import settings
 from .execution.token_utils import validate_allowlist_env
-
 
 engine = db.get_engine(settings.db_url)
 SessionLocal = db.sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)

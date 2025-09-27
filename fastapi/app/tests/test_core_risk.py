@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import pytest
-
 from backend.core import (
-    RiskLimits,
     RiskContext,
+    RiskLimits,
     cap_trade_amount_usd,
-    risk_violations,
     evaluate_trade,
+    risk_violations,
 )
 
 
@@ -89,3 +88,19 @@ def test_evaluate_trade_pass_and_fail():
         "gas_estimate_too_high",
     }
     assert "capped_by_allocation_capacity" in res2["cap_notes"]
+
+
+def test_evaluate_trade_rejects_below_minimum():
+    limits = RiskLimits(min_trade_usd=15.0)
+    ctx = RiskContext(
+        portfolio_usd=1000.0,
+        asset_allocations={"ETH": 0.01},
+        recent_trades_today=0,
+        slippage_bps=10,
+        gas_estimate_usd=1.0,
+        drawdown_24h_pct=0.0,
+        emergency_stop=False,
+    )
+    res = evaluate_trade("USDC", "ETH", 10.0, ctx, limits)
+    assert res["status"] == "rejected"
+    assert "below_minimum_notional" in res["violations"]

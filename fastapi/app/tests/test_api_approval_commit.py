@@ -3,20 +3,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from backend.db.models import BalanceSnapshot, Base, Decision, Suggestion
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
 from app.db import get_db
-from backend.db.models import Base, BalanceSnapshot, Suggestion, Decision
+from app.main import app
 
 
 @pytest.fixture()
@@ -45,11 +38,27 @@ def _seed_balances_via_override():
         gen = dep()
         session = next(gen)
         try:
-            session.add_all([
-                # Keep ETH allocation below the 5% cap so approval can succeed
-                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="ETH", balance=0.02, usd_price=2000, usd_value=40.0, source="test"),
-                BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="USDC", balance=1960.0, usd_price=1.0, usd_value=1960.0, source="test"),
-            ])
+            session.add_all(
+                [
+                    # Keep ETH allocation below the 5% cap so approval can succeed
+                    BalanceSnapshot(
+                        captured_at=datetime(2025, 1, 1, tzinfo=UTC),
+                        asset="ETH",
+                        balance=0.02,
+                        usd_price=2000,
+                        usd_value=40.0,
+                        source="test",
+                    ),
+                    BalanceSnapshot(
+                        captured_at=datetime(2025, 1, 1, tzinfo=UTC),
+                        asset="USDC",
+                        balance=1960.0,
+                        usd_price=1.0,
+                        usd_value=1960.0,
+                        source="test",
+                    ),
+                ]
+            )
             session.commit()
         finally:
             try:

@@ -4,7 +4,7 @@
 
 ## Medium Priority
 - Signer + execution (phase 1: testnet EOA)
-  - Remaining: Permit2 (optional), startup validation for `TOKEN_ALLOWLIST_JSON`, per‑asset min trade thresholds, richer UI surfacing (address/chain, price/decimals).
+  - Remaining: Permit2 (optional), richer UI surfacing (address/chain, price/decimals).
 - Risk hardening
   - Per-asset/day caps, drawdown/circuit breaker, max concurrent trades, token allowlist, slippage ceiling.
 - API contracts and DTOs
@@ -67,3 +67,4 @@
   - `/v1/trades/execute` wired to pass USD amounts to the service (no stubbed casts).
   - Docs updated: allowlist schema, runbook execution section; `.env.example` sample updated.
   - Tests added: conversion helper (allowlist, CoinGecko, TTL), execution path happy‑path (monkeypatched).
+  - Allowlist `min_trade_usd` enforces per-asset minimum notionals in approvals, auto-decider, and execution.

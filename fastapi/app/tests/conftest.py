@@ -5,8 +5,20 @@ import os
 
 _DEFAULT_ALLOWLIST = {
     "11155111": {
-        "USDC": {"symbol": "USDC", "address": "0x0000000000000000000000000000000000000001", "decimals": 6, "usd_price": 1.0},
-        "ETH": {"symbol": "ETH", "address": None, "decimals": 18, "usd_price": 2000.0},
+        "USDC": {
+            "symbol": "USDC",
+            "address": "0x0000000000000000000000000000000000000001",
+            "decimals": 6,
+            "usd_price": 1.0,
+            "min_trade_usd": 5.0,
+        },
+        "ETH": {
+            "symbol": "ETH",
+            "address": None,
+            "decimals": 18,
+            "usd_price": 2000.0,
+            "min_trade_usd": 10.0,
+        },
     }
 }
 

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation, ROUND_DOWN
-from functools import lru_cache
-from typing import Any, Dict, Optional
 import time
+from dataclasses import dataclass
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
+from functools import lru_cache
 from threading import Lock
+from typing import Any, Dict, Optional
 
 import httpx
 
@@ -21,6 +21,7 @@ class TokenMetadata:
     address: Optional[str]
     usd_price: Optional[Decimal]
     coingecko_id: Optional[str]
+    min_trade_usd: Optional[Decimal]
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,9 @@ def convert_usd_to_base_units(amount_usd: float | Decimal, meta: TokenMetadata) 
         raise ExecutionError("amount_invalid") from exc
     if usd_amount <= 0:
         raise ExecutionError("amount_invalid")
+
+    if meta.min_trade_usd is not None and usd_amount < meta.min_trade_usd:
+        raise ExecutionError("amount_below_min_trade")
 
     usd_per_token = _resolve_usd_price(meta)
     token_amount = usd_amount / usd_per_token
@@ -90,13 +94,42 @@ def get_token_metadata(chain_id: int, symbol: str) -> TokenMetadata:
         if usd_price <= 0:
             raise ExecutionError("token_price_invalid")
 
+    min_trade_raw = token_entry.get("min_trade_usd")
+    min_trade_usd: Optional[Decimal] = None
+    if min_trade_raw is not None:
+        try:
+            min_trade_usd = Decimal(str(min_trade_raw))
+        except (InvalidOperation, TypeError) as exc:
+            raise ExecutionError("token_min_trade_invalid") from exc
+        if min_trade_usd <= 0:
+            raise ExecutionError("token_min_trade_invalid")
+
     return TokenMetadata(
         symbol=token_entry.get("symbol") or symbol.upper(),
         decimals=decimals,
         address=address,
         usd_price=usd_price,
         coingecko_id=coingecko_id,
+        min_trade_usd=min_trade_usd,
     )
+
+
+def get_token_min_trade_usd(chain_id: int | None, symbol: str) -> Optional[Decimal]:
+    """Return the configured minimum USD notional for a token, if provided."""
+
+    if chain_id is not None:
+        meta = get_token_metadata(chain_id, symbol)
+        return meta.min_trade_usd
+
+    allowlist = _get_allowlist()
+    for chain_key in allowlist.keys():
+        try:
+            chain_meta = get_token_metadata(int(chain_key), symbol)
+        except ExecutionError:
+            continue
+        if chain_meta.min_trade_usd is not None:
+            return chain_meta.min_trade_usd
+    return None
 
 
 def _get_allowlist() -> Dict[str, Dict[str, Dict[str, Any]]]:

@@ -3,23 +3,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from backend.db.models import Base, Suggestion
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
-from app.db import get_db
-from app.config import settings
-from app.execution.service import ExecutionService
 from app.api.v1 import routes_trades
-from backend.db.models import Base, Suggestion, Trade
+from app.config import settings
+from app.db import get_db
+from app.execution.service import ExecutionService
+from app.main import app
 
 
 @pytest.fixture()
@@ -124,6 +117,20 @@ def test_execute_real_marks_failed_without_integration(client: TestClient):
     data = r.json()
     assert data["status"] == "failed"
     assert data["error"] == "execution_not_configured"
+
+
+def test_execute_rejects_below_min_trade(client: TestClient):
+    sug_id = _insert_suggestion()
+    payload = {
+        "suggestion_id": sug_id,
+        "asset_from": "USDC",
+        "asset_to": "ETH",
+        "amount_usd": 1.0,
+        "dry_run": True,
+    }
+    r = client.post("/v1/trades/execute", json=payload)
+    assert r.status_code == 400
+    assert r.json()["detail"] == "amount_below_minimum_trade"
 
 
 def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClient):

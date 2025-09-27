@@ -17,6 +17,7 @@ Each chain maps to a set of token symbols. Every token entry must include:
 - `decimals`: base unit precision (required)
 - `address`: checksum address for ERC-20 tokens; omit or set `null` for native ETH
 - One of `usd_price` (float) or `coingecko_id` (string) so the backend can convert USD → base units
+- Optional `min_trade_usd` (float) to enforce per-asset minimum trade notional (guard against dust trades)
 - Optional metadata such as `symbol`
 
 ```json
@@ -35,7 +36,8 @@ Each chain maps to a set of token symbols. Every token entry must include:
     "USDC": {
       "address": "<TODO_USDC_SEPOLIA>",
       "decimals": 6,
-      "usd_price": 1.0
+      "usd_price": 1.0,
+      "min_trade_usd": 5.0
     }
   },
   "84532": {

@@ -33,7 +33,7 @@ WALLET_PRIVATE_KEY=
 # Token metadata + pricing used for USD→wei conversion during execution (REQUIRED)
 # Missing/invalid JSON will stop the API at startup.
 # Example (Sepolia dev values — adjust for your stack):
-TOKEN_ALLOWLIST_JSON={"11155111":{"USDC":{"address":"0x0000000000000000000000000000000000000001","decimals":6,"usd_price":1.0},"ETH":{"decimals":18,"usd_price":2000.0}}}
+TOKEN_ALLOWLIST_JSON={"11155111":{"USDC":{"address":"0x0000000000000000000000000000000000000001","decimals":6,"usd_price":1.0,"min_trade_usd":5.0},"ETH":{"decimals":18,"usd_price":2000.0,"min_trade_usd":10.0}}}
 # Optional TTL (seconds) for CoinGecko price cache; default 60
 COINGECKO_PRICE_TTL_SECONDS=60
 ```
@@ -134,11 +134,11 @@ Response will include `X-Request-ID: demo-123`. Backend logs include `{"event":"
 - Required env:
   - `EXECUTION_ENABLED=true`
   - `RPC_URL`, `CHAIN_ID` (e.g., `11155111` for Sepolia), `WALLET_PRIVATE_KEY`
-  - `TOKEN_ALLOWLIST_JSON` with per-chain token metadata (`decimals`, optional `address`, and either `usd_price` or `coingecko_id`)
+  - `TOKEN_ALLOWLIST_JSON` with per-chain token metadata (`decimals`, optional `address`, `min_trade_usd`, and either `usd_price` or `coingecko_id`)
   - Optional: `ONEINCH_API_KEY` for v6 endpoints, `COINGECKO_PRICE_TTL_SECONDS` (default 60)
 - The API validates `TOKEN_ALLOWLIST_JSON` on startup; misconfigurations stop the server with a clear error.
 - Flow: the backend converts `amount_usd` → base units using allowlist price data, ensures bounded ERC‑20 allowance, builds a 1inch swap, simulates via `eth_call`, then signs and sends.
 - Quick test:
   1) Create a suggestion: `POST /v1/suggestions` with `{ "rule": "EXEC_DEMO", "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 12.5 }`
   2) Execute: `POST /v1/trades/execute` with `{ "suggestion_id": <id>, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 12.5, "slippage_bps": 50, "dry_run": false }`
-  3) Watch logs for `trade_amount_converted` and `trade_submitted`. Failures return precise errors (e.g., `token_address_missing`, `token_price_unavailable`).
+  3) Watch logs for `trade_amount_converted` and `trade_submitted`. Failures return precise errors (e.g., `token_address_missing`, `token_price_unavailable`, `amount_below_min_trade`).

@@ -3,22 +3,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from backend.db.models import BalanceSnapshot, Base, Decision, RuntimeFlag, Suggestion, Trade
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
-from app.db import get_db
 from app import worker as worker_module
 from app.config import settings
-from backend.db.models import Base, BalanceSnapshot, Suggestion, Decision, Trade, RuntimeFlag
+from app.db import get_db
+from app.main import app
 
 
 @pytest.fixture()
@@ -173,15 +166,16 @@ def test_worker_run_once_paths(monkeypatch, client_and_db):
     # Verify Decision and Trade exist
     session = SessionLocal()
     try:
-        dec_count = session.execute(
-            select(Decision).where(Decision.suggestion_id == sug_id)
-        ).scalars().all()
-        tr_count = session.execute(
-            select(Trade).where(Trade.suggestion_id == sug_id)
-        ).scalars().all()
+        dec_count = (
+            session.execute(select(Decision).where(Decision.suggestion_id == sug_id))
+            .scalars()
+            .all()
+        )
+        tr_count = (
+            session.execute(select(Trade).where(Trade.suggestion_id == sug_id)).scalars().all()
+        )
         assert len(dec_count) == 1
         assert len(tr_count) == 1
         assert tr_count[0].status == "confirmed"
     finally:
         session.close()
-

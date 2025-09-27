@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Dict
 
-from fastapi import APIRouter, Depends
+from backend.core import RiskContext, RiskLimits, evaluate_trade
+from backend.db.models import BalanceSnapshot, Decision, RuntimeFlag, Suggestion, Trade
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from ...config import settings
 from ...db import get_db
+from ...logging_util import log_event
+from ...risk_helpers import resolve_min_trade_usd
 from ...schemas import (
-    ApprovalEvaluateIn,
-    ApprovalEvaluateOut,
     ApprovalCommitIn,
     ApprovalCommitOut,
-    DecisionOut,
+    ApprovalEvaluateIn,
+    ApprovalEvaluateOut,
 )
-from backend.core import RiskContext, RiskLimits, evaluate_trade
-from backend.db.models import BalanceSnapshot, RuntimeFlag, Trade, Suggestion, Decision
-from ...config import settings
-from fastapi import HTTPException
-from datetime import datetime
-from ...logging_util import log_event
-
 
 router = APIRouter(tags=["approvals"])
 
@@ -35,13 +32,9 @@ def _latest_values_usd(db: Session) -> Dict[str, float]:
         .group_by(BalanceSnapshot.asset)
         .subquery()
     )
-    stmt = (
-        select(BalanceSnapshot)
-        .join(
-            subq,
-            (BalanceSnapshot.asset == subq.c.asset)
-            & (BalanceSnapshot.captured_at == subq.c.max_ts),
-        )
+    stmt = select(BalanceSnapshot).join(
+        subq,
+        (BalanceSnapshot.asset == subq.c.asset) & (BalanceSnapshot.captured_at == subq.c.max_ts),
     )
     values: Dict[str, float] = {}
     for row in db.execute(stmt).scalars():
@@ -54,11 +47,18 @@ def _latest_values_usd(db: Session) -> Dict[str, float]:
 
 def _recent_trades_today(db: Session) -> int:
     # Count trades with executed_at on the same UTC date and not failed
-    today = datetime.now(UTC).date()
-    stmt = select(func.count()).select_from(Trade).where(
-        Trade.executed_at.is_not(None),
+    day_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = day_start + timedelta(days=1)
+    stmt = (
+        select(func.count())
+        .select_from(Trade)
+        .where(
+            Trade.executed_at.is_not(None),
+            Trade.executed_at >= day_start,
+            Trade.executed_at < day_end,
+            Trade.status != "failed",
+        )
     )
-    # SQLite lacks date() over timestamp with tz; keep simple for now (will be 0 until trades exist)
     return int(db.execute(stmt).scalar() or 0)
 
 
@@ -74,9 +74,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
     values_usd = _latest_values_usd(db)
     port = sum(values_usd.values())
     asset_allocations = (
-        {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()}
-        if port > 0
-        else {}
+        {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
     )
     ctx = RiskContext(
         portfolio_usd=port,
@@ -87,11 +85,15 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         drawdown_24h_pct=0.0,  # TODO: compute from performance table once available
         emergency_stop=_emergency_stop(db),
     )
-    limits = RiskLimits(
+    limits_kwargs = dict(
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
     )
+    min_trade = resolve_min_trade_usd(payload.asset_to)
+    if min_trade is not None:
+        limits_kwargs["min_trade_usd"] = float(min_trade)
+    limits = RiskLimits(**limits_kwargs)
     result = evaluate_trade(
         asset_from=payload.asset_from,
         asset_to=payload.asset_to,
@@ -126,9 +128,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
     values_usd = _latest_values_usd(db)
     port = sum(values_usd.values())
     asset_allocations = (
-        {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()}
-        if port > 0
-        else {}
+        {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
     )
     ctx = RiskContext(
         portfolio_usd=port,
@@ -139,11 +139,15 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
         drawdown_24h_pct=0.0,
         emergency_stop=_emergency_stop(db),
     )
-    limits = RiskLimits(
+    limits_kwargs = dict(
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
     )
+    min_trade = resolve_min_trade_usd(payload.asset_to)
+    if min_trade is not None:
+        limits_kwargs["min_trade_usd"] = float(min_trade)
+    limits = RiskLimits(**limits_kwargs)
     evaluation = evaluate_trade(
         asset_from=payload.asset_from,
         asset_to=payload.asset_to,
@@ -166,12 +170,15 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
         # If reason exists, append evaluation tag; else store evaluation summary compactly
         import json
 
-        eval_audit = json.dumps({
-            "status": evaluation.get("status"),
-            "capped_amount_usd": evaluation.get("capped_amount_usd"),
-            "cap_notes": evaluation.get("cap_notes"),
-            "violations": evaluation.get("violations"),
-        }, separators=(",", ":"))
+        eval_audit = json.dumps(
+            {
+                "status": evaluation.get("status"),
+                "capped_amount_usd": evaluation.get("capped_amount_usd"),
+                "cap_notes": evaluation.get("cap_notes"),
+                "violations": evaluation.get("violations"),
+            },
+            separators=(",", ":"),
+        )
         if reason:
             reason = f"{reason}\napproval_evaluation={eval_audit}"
         else:

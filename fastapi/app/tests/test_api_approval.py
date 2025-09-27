@@ -3,20 +3,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from backend.db.models import BalanceSnapshot, Base
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
 from app.db import get_db
-from backend.db.models import Base, BalanceSnapshot
+from app.main import app
 
 
 @pytest.fixture()
@@ -44,10 +37,26 @@ def test_approvals_evaluate_returns_decision(client: TestClient):
     gen = next(iter(app.dependency_overrides.values()))()
     session = next(gen)
     try:
-        session.add_all([
-            BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="ETH", balance=1.0, usd_price=2000, usd_value=2000, source="test"),
-            BalanceSnapshot(captured_at=datetime(2025, 1, 1, tzinfo=UTC), asset="USDC", balance=500.0, usd_price=1.0, usd_value=500.0, source="test"),
-        ])
+        session.add_all(
+            [
+                BalanceSnapshot(
+                    captured_at=datetime(2025, 1, 1, tzinfo=UTC),
+                    asset="ETH",
+                    balance=1.0,
+                    usd_price=2000,
+                    usd_value=2000,
+                    source="test",
+                ),
+                BalanceSnapshot(
+                    captured_at=datetime(2025, 1, 1, tzinfo=UTC),
+                    asset="USDC",
+                    balance=500.0,
+                    usd_price=1.0,
+                    usd_value=500.0,
+                    source="test",
+                ),
+            ]
+        )
         session.commit()
     finally:
         try:
@@ -69,3 +78,17 @@ def test_approvals_evaluate_returns_decision(client: TestClient):
     assert "violations" in data and isinstance(data["violations"], list)
     assert "cap_notes" in data and isinstance(data["cap_notes"], list)
 
+
+def test_approvals_evaluate_rejects_below_min_trade(client: TestClient):
+    payload = {
+        "asset_from": "USDC",
+        "asset_to": "ETH",
+        "suggested_amount_usd": 1.0,
+        "slippage_bps": 0,
+        "gas_estimate_usd": 0,
+    }
+    r = client.post("/v1/approvals/evaluate", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "rejected"
+    assert "below_minimum_notional" in data["violations"]

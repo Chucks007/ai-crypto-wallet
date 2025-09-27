@@ -1,22 +1,13 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 import pytest
+from backend.db.models import Base
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
 from app.db import get_db
-from backend.db.models import Base, RuntimeFlag
+from app.main import app
 
 
 @pytest.fixture()
@@ -85,4 +76,3 @@ def test_generic_set_and_get_flag(client: TestClient):
     d2 = r2.json()
     assert d2["key"] == "sample_flag"
     assert d2["value"] == "on"
-

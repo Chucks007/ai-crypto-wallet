@@ -18,4 +18,5 @@ Quick start
 
 Safety defaults
 - Guardrails: $50/trade, ≤5% per-asset, ≤2 trades/day, stop if drawdown >15% (24h), reject slippage >2%, reject gas est. >$5, emergency stop flag.
+- Allowlist-driven per-asset minimum notionals (`min_trade_usd`) prevent dust trades slipping through approvals and execution.
 - Execution is dry-run by default; server-side signing is disabled unless explicitly enabled for testnets.

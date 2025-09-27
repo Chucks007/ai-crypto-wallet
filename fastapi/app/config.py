@@ -1,11 +1,9 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PYTEST = "PYTEST_CURRENT_TEST" in os.environ
 
@@ -67,7 +65,9 @@ class Settings(BaseSettings):
     db_url: str = Field(default="sqlite:///./wallet.db", alias="DB_URL")
     alchemy_rpc_url: str | None = Field(default=None, alias="ALCHEMY_RPC_URL")
     oneinch_base_url: str = Field(default="https://api.1inch.dev", alias="ONEINCH_BASE_URL")
-    coingecko_base_url: str = Field(default="https://api.coingecko.com/api/v3", alias="COINGECKO_BASE_URL")
+    coingecko_base_url: str = Field(
+        default="https://api.coingecko.com/api/v3", alias="COINGECKO_BASE_URL"
+    )
     max_slippage_bps: int = Field(default=200, alias="MAX_SLIPPAGE_BPS")
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
     # Per-asset allocation cap used in API risk evaluation
@@ -87,5 +87,6 @@ class Settings(BaseSettings):
     # Optional API keys
     oneinch_api_key: str | None = Field(default=None, alias="ONEINCH_API_KEY")
     tenderly_api_key: str | None = Field(default=None, alias="TENDERLY_API_KEY")
+
 
 settings = Settings()

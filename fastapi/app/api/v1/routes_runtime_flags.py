@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import List, Optional
+from typing import List
 
+from backend.db.models import RuntimeFlag
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ...db import get_db
-from ...schemas import RuntimeFlagOut, RuntimeFlagSetIn, EmergencyStopOut, EmergencyStopSetIn
-from backend.db.models import RuntimeFlag
-
+from ...schemas import EmergencyStopOut, EmergencyStopSetIn, RuntimeFlagOut, RuntimeFlagSetIn
 
 router = APIRouter(tags=["runtime_flags"])
 

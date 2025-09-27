@@ -1,26 +1,16 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Generator
 
 import pytest
+from backend.db.models import BalanceSnapshot, Base
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Ensure local FastAPI app package is importable without conflicting with the third-party
-# `fastapi` library by adding the `fastapi/` folder to sys.path before imports.
-import sys
-from pathlib import Path
-
-FASTAPI_DIR = Path(__file__).resolve().parents[1]
-if str(FASTAPI_DIR) not in sys.path:
-    sys.path.insert(0, str(FASTAPI_DIR))
-
-from app.main import app
 from app.db import get_db
-from backend.db.models import Base, BalanceSnapshot
+from app.main import app
 
 
 @pytest.fixture()

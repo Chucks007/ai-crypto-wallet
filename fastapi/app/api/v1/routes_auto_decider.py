@@ -5,8 +5,7 @@ from fastapi import APIRouter, Header, HTTPException
 from ...config import settings
 from ...worker import run_once
 
-
-router = APIRouter(tags=["auto_decider"]) 
+router = APIRouter(tags=["auto_decider"])
 
 
 @router.post("/auto-decider/run")
