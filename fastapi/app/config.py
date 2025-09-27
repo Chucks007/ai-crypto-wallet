@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PYTEST = "PYTEST_CURRENT_TEST" in os.environ
@@ -87,6 +87,34 @@ class Settings(BaseSettings):
     # Optional API keys
     oneinch_api_key: str | None = Field(default=None, alias="ONEINCH_API_KEY")
     tenderly_api_key: str | None = Field(default=None, alias="TENDERLY_API_KEY")
+    # Optional Permit2 integration
+    permit2_enabled: bool = Field(default=False, alias="PERMIT2_ENABLED")
+    permit2_contract: str | None = Field(default=None, alias="PERMIT2_CONTRACT")
+    permit2_default_spender: str | None = Field(default=None, alias="PERMIT2_DEFAULT_SPENDER")
+    permit2_default_expiration_seconds: int = Field(
+        default=60 * 30, alias="PERMIT2_DEFAULT_EXPIRATION_SECONDS"
+    )
+    permit2_min_validity_seconds: int = Field(
+        default=60, alias="PERMIT2_MIN_VALIDITY_SECONDS"
+    )
+
+    @field_validator("permit2_default_expiration_seconds", "permit2_min_validity_seconds")
+    @classmethod
+    def _ensure_positive(cls, value: int, info):
+        if value < 0:
+            raise ValueError(f"{info.field_name} must be non-negative")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_permit2_config(self):
+        if self.permit2_enabled:
+            if not self.permit2_contract:
+                raise ValueError("PERMIT2_CONTRACT must be provided when Permit2 is enabled")
+            if not self.permit2_default_spender:
+                raise ValueError(
+                    "PERMIT2_DEFAULT_SPENDER must be provided when Permit2 is enabled"
+                )
+        return self
 
 
 settings = Settings()

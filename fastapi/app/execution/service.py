@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 import httpx
 from web3 import Web3
@@ -10,6 +11,7 @@ from web3.types import TxParams
 from ..config import settings
 from ..logging_util import log_event
 from .errors import ExecutionError
+from .permit2 import Permit2Authorizer, Permit2Payload
 from .signer import EnvPrivateKeySigner
 from .token_utils import (
     ConversionResult,
@@ -22,6 +24,7 @@ from .token_utils import (
 @dataclass
 class ExecutionService:
     signer: EnvPrivateKeySigner
+    permit2: Optional[Permit2Authorizer] = None
 
     def _allowed_chain(self, chain_id: int) -> bool:
         allowed = {
@@ -52,14 +55,27 @@ class ExecutionService:
         amount_wei: int,
         from_address: str,
         slippage_bps: int,
+        permit_payload: Permit2Payload | None = None,
     ) -> dict[str, Any]:
         slippage_pct = (slippage_bps or 0) / 100.0
-        url = (
-            f"{settings.oneinch_base_url}/swap/v6.0/{chain_id}/swap"
-            f"?src={src}&dst={dst}&amount={amount_wei}&fromAddress={from_address}&slippage={slippage_pct}"
-        )
+        base_url = f"{settings.oneinch_base_url}/swap/v6.0/{chain_id}/swap"
+        params: dict[str, Any] = {
+            "src": src,
+            "dst": dst,
+            "amount": amount_wei,
+            "fromAddress": from_address,
+            "slippage": slippage_pct,
+        }
+        if permit_payload:
+            params["permit"] = json.dumps(
+                {
+                    "type": "Permit2",
+                    "signature": permit_payload.signature,
+                    "permit": permit_payload.permit,
+                }
+            )
         with httpx.Client(timeout=30) as client:
-            r = client.get(url, headers=self._headers())
+            r = client.get(base_url, params=params, headers=self._headers())
             r.raise_for_status()
             return r.json()
 
@@ -125,21 +141,62 @@ class ExecutionService:
             chainId=network_chain_id,
         )
 
-        # 1) Approvals (ERC-20 sells only)
+        permit_payload: Permit2Payload | None = None
+        approval_hash: Optional[str] = None
+        spender: Optional[str] = None
+
+        # 1) Approvals / Permit2 (ERC-20 sells only)
         if not src_is_native:
             spender = self._get_1inch_spender(network_chain_id)
-            awaitable_hash = self.signer.ensure_allowance(
-                src_identifier, spender, conversion.base_units
-            )
-            if awaitable_hash:
-                log_event(
-                    "approval_submitted",
-                    token=src_identifier,
-                    spender=spender,
-                    txHash=awaitable_hash,
-                    asset=asset_from,
-                    decimals=src_meta.decimals,
+            if self.permit2 and self.permit2.enabled:
+                try:
+                    permit_payload = self.permit2.build_permit(
+                        token=src_identifier,
+                        spender=spender,
+                        required_amount=conversion.base_units,
+                    )
+                    if permit_payload:
+                        log_event(
+                            "permit2_signature_created",
+                            token=src_identifier,
+                            spender=spender,
+                            amount=conversion.base_units,
+                            asset=asset_from,
+                            decimals=src_meta.decimals,
+                            sigDeadline=permit_payload.permit.get("sigDeadline"),
+                        )
+                except ExecutionError as exc:
+                    log_event(
+                        "permit2_fallback",
+                        error=str(exc),
+                        token=src_identifier,
+                        spender=spender,
+                        asset=asset_from,
+                    )
+                    permit_payload = None
+                except Exception as exc:  # pragma: no cover - defensive
+                    log_event(
+                        "permit2_fallback",
+                        error=str(exc),
+                        token=src_identifier,
+                        spender=spender,
+                        asset=asset_from,
+                    )
+                    permit_payload = None
+
+            if permit_payload is None:
+                approval_hash = self.signer.ensure_allowance(
+                    src_identifier, spender, conversion.base_units
                 )
+                if approval_hash:
+                    log_event(
+                        "approval_submitted",
+                        token=src_identifier,
+                        spender=spender,
+                        txHash=approval_hash,
+                        asset=asset_from,
+                        decimals=src_meta.decimals,
+                    )
 
         # 2) Build swap tx via 1inch
         swap = self._build_1inch_swap_tx(
@@ -149,6 +206,7 @@ class ExecutionService:
             amount_wei=conversion.base_units,
             from_address=self.signer.address,
             slippage_bps=slippage_bps or 0,
+            permit_payload=permit_payload,
         )
         tx_meta = swap.get("tx") or {}
         if not tx_meta:

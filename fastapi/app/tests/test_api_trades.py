@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from backend.db.models import Base, Suggestion
@@ -171,3 +172,61 @@ def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClie
     assert data["status"] == "submitted"
     assert data["tx_hash"] == "0xhash"
     assert captured["amount_usd"] == float(payload["amount_usd"])
+
+
+def test_execution_status_disabled(monkeypatch, client: TestClient):
+    monkeypatch.setattr(settings, "execution_enabled", False, raising=False)
+    r = client.get("/v1/execution/status")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["execution_enabled"] is False
+    assert data["signer_ready"] is False
+    assert data["permit2"]["enabled"] is False
+
+
+def test_execution_status_reports_permit2_ready(monkeypatch, client: TestClient):
+    monkeypatch.setattr(settings, "execution_enabled", True, raising=False)
+    monkeypatch.setattr(settings, "rpc_url", "http://stub", raising=False)
+    monkeypatch.setattr(settings, "chain_id", 11155111, raising=False)
+    monkeypatch.setattr(settings, "wallet_private_key", "0x1", raising=False)
+    monkeypatch.setattr(settings, "permit2_enabled", True, raising=False)
+    monkeypatch.setattr(
+        settings,
+        "permit2_contract",
+        "0x00000000000000000000000000000000000000F1",
+        raising=False,
+    )
+    monkeypatch.setattr(
+        settings,
+        "permit2_default_spender",
+        "0x00000000000000000000000000000000000000F2",
+        raising=False,
+    )
+
+    class DummySigner:
+        def __init__(self, rpc_url: str, chain_id: int, private_key: str):
+            self.address = "0x0000000000000000000000000000000000000ABC"
+            self.private_key = private_key
+            self.w3 = SimpleNamespace(eth=SimpleNamespace(chain_id=chain_id))
+
+    captured = {}
+
+    class DummyPermit2:
+        def __init__(self, signer, **kwargs):
+            captured.update(kwargs)
+            self.enabled = True
+
+        def readiness(self):
+            return True, "ready"
+
+    monkeypatch.setattr(routes_trades, "EnvPrivateKeySigner", DummySigner)
+    monkeypatch.setattr(routes_trades, "Permit2Authorizer", DummyPermit2)
+
+    r = client.get("/v1/execution/status")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["execution_enabled"] is True
+    assert data["signer_ready"] is True
+    assert data["permit2"]["enabled"] is True
+    assert data["permit2"]["ready"] is True
+    assert captured["contract_address"].lower() == settings.permit2_contract.lower()

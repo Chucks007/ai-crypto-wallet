@@ -3,6 +3,8 @@
 All notable changes to this project will be documented here.
 
 Unreleased
+- Execution: added optional Permit2 signing path with configurable contract/spender, automatic permit minting, and bounded-approval fallback. Exposed readiness via `GET /v1/execution/status`.
+- Tests: covered Permit2 authorizer and execution status endpoint; ensures signatures are properly encoded.
 - Docs: moved core docs into `docs/` as PROJECT.md, BACKEND.md, FRONTEND.md, RUNBOOK.md.
 - Security: added SECURITY.md consolidating guardrails and signing policy.
 - Config alignment: defaults unified (`MAX_TRADE_SIZE_USD=50`, `MAX_SLIPPAGE_BPS=200`, `MAX_ALLOCATION_PCT=0.05`).

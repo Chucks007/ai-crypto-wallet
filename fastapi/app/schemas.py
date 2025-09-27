@@ -144,3 +144,21 @@ class TradeOut(BaseModel):
     error: Optional[str]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class Permit2StatusOut(BaseModel):
+    enabled: bool
+    ready: bool
+    status: str
+    contract: Optional[str]
+    default_spender: Optional[str]
+
+
+class ExecutionStatusOut(BaseModel):
+    execution_enabled: bool
+    allowed_chain_ids: list[int]
+    configured_chain_id: Optional[int]
+    signer_ready: bool
+    signer_address: Optional[str]
+    signer_error: Optional[str] = None
+    permit2: Permit2StatusOut

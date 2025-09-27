@@ -58,6 +58,9 @@ Notes
 - Flow:
   1) User signs Permit2 typed data (`PermitSingle`).
   2) Contract (router) uses Permit2 to transfer tokens without prior ERC‑20 approve.
+
+Backend integration
+- When `PERMIT2_ENABLED=true`, the FastAPI service signs `PermitSingle` payloads using the configured burner key and attaches the 0x-prefixed signature to 1inch swap requests. Missing or stale permits trigger on-demand refreshes; otherwise we fall back to bounded ERC‑20 approvals.
 - Typed data (example skeleton):
 ```json
 {

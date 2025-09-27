@@ -36,6 +36,14 @@ WALLET_PRIVATE_KEY=
 TOKEN_ALLOWLIST_JSON={"11155111":{"USDC":{"address":"0x0000000000000000000000000000000000000001","decimals":6,"usd_price":1.0,"min_trade_usd":5.0},"ETH":{"decimals":18,"usd_price":2000.0,"min_trade_usd":10.0}}}
 # Optional TTL (seconds) for CoinGecko price cache; default 60
 COINGECKO_PRICE_TTL_SECONDS=60
+# Permit2 (optional)
+PERMIT2_ENABLED=false
+# Required when Permit2 is enabled; defaults surface downstream errors if omitted.
+PERMIT2_CONTRACT_ADDRESS=
+PERMIT2_DEFAULT_SPENDER=
+# Optional tuning knobs (defaults shown)
+PERMIT2_DEFAULT_EXPIRATION_SECONDS=3600
+PERMIT2_MIN_VALIDITY_SECONDS=120
 ```
 
 ## Seed demo data
@@ -93,6 +101,7 @@ pytest -q
  - `POST /v1/approvals/commit`
  - `GET /v1/trades`, `POST /v1/trades/quote`, `POST /v1/trades/execute`
  - `GET /v1/metrics/daily`
+- `GET /v1/execution/status`
 
 ## Request tracing (correlation IDs)
 - Every HTTP request receives a correlation header `X-Request-ID`.
@@ -136,6 +145,7 @@ Response will include `X-Request-ID: demo-123`. Backend logs include `{"event":"
   - `RPC_URL`, `CHAIN_ID` (e.g., `11155111` for Sepolia), `WALLET_PRIVATE_KEY`
   - `TOKEN_ALLOWLIST_JSON` with per-chain token metadata (`decimals`, optional `address`, `min_trade_usd`, and either `usd_price` or `coingecko_id`)
   - Optional: `ONEINCH_API_KEY` for v6 endpoints, `COINGECKO_PRICE_TTL_SECONDS` (default 60)
+  - Permit2 (optional but recommended): set `PERMIT2_ENABLED=true` along with `PERMIT2_CONTRACT_ADDRESS` and `PERMIT2_DEFAULT_SPENDER`. The backend will automatically mint short-lived permits before swaps; otherwise it falls back to bounded ERC‑20 approvals.
 - The API validates `TOKEN_ALLOWLIST_JSON` on startup; misconfigurations stop the server with a clear error.
 - Flow: the backend converts `amount_usd` → base units using allowlist price data, ensures bounded ERC‑20 allowance, builds a 1inch swap, simulates via `eth_call`, then signs and sends.
 - Quick test:

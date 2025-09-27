@@ -116,5 +116,10 @@ Note: Keep migration notes here while scope is small; migrate to `docs/CHANGELOG
 - `EXECUTION_ENABLED`: enable server-side execution; default `false` (dev/testnet only)
 - `EXECUTION_ALLOWED_CHAIN_IDS`: allowed chain IDs when execution is enabled; default `"11155111,84532"` (Sepolia, Base Sepolia)
 - `TOKEN_ALLOWLIST_JSON`: per-chain token metadata (decimals, optional address, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`)
+- `PERMIT2_ENABLED`: opt-in Permit2 signing flow; default `false`
+- `PERMIT2_CONTRACT_ADDRESS`: Permit2 contract used when enabled (required)
+- `PERMIT2_DEFAULT_SPENDER`: default router/spender for permits (optional but recommended)
+- `PERMIT2_DEFAULT_EXPIRATION_SECONDS`: permit lifetime (seconds) before refresh; default `3600`
+- `PERMIT2_MIN_VALIDITY_SECONDS`: threshold for refreshing permits; default `120`
 
 Note: Override via env; copy `fastapi/.env.example` for local defaults.

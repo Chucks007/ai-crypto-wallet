@@ -9,12 +9,98 @@ from sqlalchemy.orm import Session
 
 from ...config import settings
 from ...db import get_db
-from ...execution import EnvPrivateKeySigner, ExecutionError, ExecutionService
+from ...execution import EnvPrivateKeySigner, ExecutionError, ExecutionService, Permit2Authorizer
 from ...logging_util import log_event
 from ...risk_helpers import resolve_min_trade_usd
-from ...schemas import TradeExecuteIn, TradeOut, TradeQuoteIn, TradeQuoteOut
+from ...schemas import ExecutionStatusOut, TradeExecuteIn, TradeOut, TradeQuoteIn, TradeQuoteOut
+
 
 router = APIRouter(tags=["trades"])
+
+
+@router.get("/execution/status", response_model=ExecutionStatusOut)
+def execution_status():
+    allowed_chain_ids: list[int] = []
+    for part in settings.execution_allowed_chain_ids.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            allowed_chain_ids.append(int(part))
+        except ValueError:
+            continue
+
+    signer_ready = False
+    signer_address: str | None = None
+    signer_error: str | None = None
+    active_chain_id = settings.chain_id
+    signer_instance: EnvPrivateKeySigner | None = None
+
+    if not settings.execution_enabled:
+        signer_error = "execution_disabled"
+    else:
+        missing_fields: list[str] = []
+        if not settings.wallet_private_key:
+            missing_fields.append("wallet_private_key")
+        if not settings.chain_id:
+            missing_fields.append("chain_id")
+        if not (settings.rpc_url or settings.alchemy_rpc_url):
+            missing_fields.append("rpc_url")
+
+        if missing_fields:
+            signer_error = f"missing_config:{','.join(missing_fields)}"
+        else:
+            try:
+                signer_instance = EnvPrivateKeySigner(
+                    rpc_url=settings.rpc_url or settings.alchemy_rpc_url or "",
+                    chain_id=int(settings.chain_id or 0),
+                    private_key=settings.wallet_private_key,
+                )
+                signer_address = signer_instance.address
+                signer_ready = True
+                try:
+                    active_chain_id = signer_instance.w3.eth.chain_id
+                except Exception:  # pragma: no cover - depends on RPC reachability
+                    active_chain_id = settings.chain_id
+            except Exception as exc:  # pragma: no cover - defensive
+                signer_error = f"signer_error:{exc}"
+
+    permit_ready = False
+    permit_status = "disabled"
+    if settings.permit2_enabled:
+        permit_status = "signer_unavailable"
+        if signer_instance and signer_ready:
+            try:
+                permit_authorizer = Permit2Authorizer(
+                    signer_instance,
+                    enabled=True,
+                    contract_address=settings.permit2_contract,
+                    default_spender=settings.permit2_default_spender,
+                    default_expiration_seconds=settings.permit2_default_expiration_seconds,
+                    min_validity_seconds=settings.permit2_min_validity_seconds,
+                )
+                permit_ready, permit_status = permit_authorizer.readiness()
+            except Exception as exc:  # pragma: no cover - defensive
+                permit_ready = False
+                permit_status = f"permit2_error:{exc}"
+        elif not signer_ready:
+            permit_status = "signer_unavailable"
+
+    return ExecutionStatusOut(
+        execution_enabled=settings.execution_enabled,
+        allowed_chain_ids=allowed_chain_ids,
+        configured_chain_id=active_chain_id,
+        signer_ready=signer_ready,
+        signer_address=signer_address,
+        signer_error=signer_error,
+        permit2={
+            "enabled": settings.permit2_enabled,
+            "ready": permit_ready,
+            "status": permit_status,
+            "contract": settings.permit2_contract,
+            "default_spender": settings.permit2_default_spender,
+        },
+    )
 
 
 @router.post("/trades/quote", response_model=TradeQuoteOut)
@@ -111,7 +197,15 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         if not signer.rpc_url:
             raise ExecutionError("rpc_url_missing")
 
-        service = ExecutionService(signer)
+        permit2_authorizer = Permit2Authorizer(
+            signer,
+            enabled=settings.permit2_enabled,
+            contract_address=settings.permit2_contract,
+            default_spender=settings.permit2_default_spender,
+            default_expiration_seconds=settings.permit2_default_expiration_seconds,
+            min_validity_seconds=settings.permit2_min_validity_seconds,
+        )
+        service = ExecutionService(signer, permit2=permit2_authorizer)
         tx_hash = service.execute_swap(
             asset_from=payload.asset_from,
             asset_to=payload.asset_to,

@@ -70,6 +70,10 @@ Base URL: `/v1`
   - 200 (dry_run=false, execution disabled): trade record with `status="failed"`, `error="execution_not_configured"`
   - 200 (dry_run=false, execution enabled): converts `amount_usd` → base units using `TOKEN_ALLOWLIST_JSON` (requires `decimals` and either `usd_price` or `coingecko_id`), ensures bounded ERC‑20 approvals, builds a 1inch swap tx, simulates via `eth_call`, then signs and broadcasts. Precise errors bubble up (e.g., `token_not_allowlisted`, `token_address_missing`, `token_price_unavailable`, `simulation_reverted`).
 
+- GET `/execution/status`
+  - 200: `{ "signer": { "ready": bool, "address": string|null }, "permit2": { "enabled": bool, "ready": bool, "contract_address": string|null, "spender": string|null } }`
+  - Notes: surfaces readiness of the server-side signer and Permit2 configuration used by execution flows.
+
 - GET `/trades?limit=50`
   - 200: list of trades (descending by id)
   - Notes: `limit` in range [1,200], default 50; timestamps UTC ISO‑8601
@@ -102,9 +106,9 @@ Base URL: `/v1`
   - Native ETH uses 18 decimals and no address; ERC‑20s require checksum `address`.
   - Conversion uses Decimal math with ROUND_DOWN; tiny notional raises `amount_too_small`.
   - Optional `min_trade_usd` enforces per-asset minimum notionals; requests below the threshold raise `amount_below_min_trade`.
-- Approvals
-  - Bounded `approve(spender, amount)` sent only when current allowance is insufficient.
-  - Permit2 may be added later; current path avoids infinite approvals.
+- Approvals & Permit2
+  - Permit2 signatures are generated automatically when enabled and the current allowance is stale. The backend signs `PermitSingle` typed data offline and forwards it to 1inch alongside the swap request.
+  - When Permit2 is disabled or the spender/token combination lacks Permit2 support, the service falls back to bounded ERC‑20 `approve(spender, amount)` calls—never unlimited approvals.
 - External APIs
   - 1inch v6 (`ONEINCH_BASE_URL`), optional `ONEINCH_API_KEY` via `Authorization: Bearer <key>`.
   - CoinGecko (`COINGECKO_BASE_URL`); prices cached in-memory with `COINGECKO_PRICE_TTL_SECONDS` (default 60s).
@@ -114,6 +118,12 @@ Base URL: `/v1`
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
   - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`
   - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)
+  - Permit2 (optional):
+    - `PERMIT2_ENABLED` (default false)
+    - `PERMIT2_CONTRACT_ADDRESS` (required when enabled)
+    - `PERMIT2_DEFAULT_SPENDER` (default router/spender when swap route omits spender)
+    - `PERMIT2_DEFAULT_EXPIRATION_SECONDS` (default permit validity window; default 3600)
+    - `PERMIT2_MIN_VALIDITY_SECONDS` (minimum remaining lifetime before a new permit is minted)
 
 ---
 
