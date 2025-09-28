@@ -75,3 +75,38 @@ CREATE TABLE IF NOT EXISTS runtime_flags (
   updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
+-- Per-asset risk usage tracking (daily)
+CREATE TABLE IF NOT EXISTS asset_daily_usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chain_id INTEGER,
+  asset_symbol TEXT NOT NULL,
+  date_utc DATE NOT NULL,
+  trade_count INTEGER NOT NULL DEFAULT 0,
+  notional_usd REAL NOT NULL DEFAULT 0,
+  last_trade_at DATETIME,
+  updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  UNIQUE (chain_id, asset_symbol, date_utc)
+);
+
+CREATE INDEX IF NOT EXISTS idx_asset_daily_usage_lookup
+  ON asset_daily_usage (chain_id, asset_symbol, date_utc);
+
+CREATE INDEX IF NOT EXISTS idx_asset_daily_usage_updated
+  ON asset_daily_usage (updated_at);
+
+-- Configurable per-asset limits (optional overrides)
+CREATE TABLE IF NOT EXISTS asset_risk_limits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chain_id INTEGER,
+  asset_symbol TEXT NOT NULL,
+  max_trades_per_day INTEGER,
+  max_notional_usd REAL,
+  active_from DATE NOT NULL DEFAULT (DATE('now')),
+  notes TEXT,
+  updated_at DATETIME NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  UNIQUE (chain_id, asset_symbol, active_from)
+);
+
+CREATE INDEX IF NOT EXISTS idx_asset_risk_limits_lookup
+  ON asset_risk_limits (chain_id, asset_symbol, active_from);
+

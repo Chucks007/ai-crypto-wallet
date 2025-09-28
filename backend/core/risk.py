@@ -12,6 +12,8 @@ class RiskLimits:
     max_slippage_bps: int = 200          # ≤ 2% slippage
     max_gas_usd: float = 5.0             # ≤ $5 gas
     max_drawdown_24h_pct: float = 0.15   # stop if down >15% in 24h
+    max_asset_trades_per_day: Optional[int] = None      # optional per-asset count cap
+    max_asset_notional_per_day_usd: Optional[float] = None  # optional per-asset notional cap
     min_trade_usd: float = 5.0           # reject dust trades below this notional
 
 
@@ -20,6 +22,8 @@ class RiskContext:
     portfolio_usd: float
     asset_allocations: Dict[str, float]  # current weights (0..1) per asset
     recent_trades_today: int = 0
+    asset_trades_today: int = 0
+    asset_notional_today_usd: float = 0.0
     slippage_bps: Optional[int] = None
     gas_estimate_usd: Optional[float] = None
     drawdown_24h_pct: Optional[float] = None  # positive for drawdown, e.g., 0.12 => -12%
@@ -43,6 +47,14 @@ def cap_trade_amount_usd(
     if amount > limits.max_trade_usd:
         amount = limits.max_trade_usd
         notes.append(f"capped_by_trade_limit_${limits.max_trade_usd:.2f}")
+
+    # Per-asset daily notional cap (remaining budget)
+    if limits.max_asset_notional_per_day_usd is not None:
+        asset_consumed = max(0.0, ctx.asset_notional_today_usd)
+        remaining_asset_budget = max(0.0, limits.max_asset_notional_per_day_usd - asset_consumed)
+        if amount > remaining_asset_budget:
+            amount = remaining_asset_budget
+            notes.append("capped_by_asset_daily_notional")
 
     # Allocation capacity (skip if portfolio unknown/zero)
     port = max(0.0, ctx.portfolio_usd)
@@ -70,12 +82,21 @@ def risk_violations(
         v.append("emergency_stop_enabled")
     if ctx.recent_trades_today >= limits.max_trades_per_day:
         v.append("daily_trade_limit_reached")
+    if (
+        limits.max_asset_trades_per_day is not None
+        and ctx.asset_trades_today >= limits.max_asset_trades_per_day
+    ):
+        v.append("asset_daily_trade_limit_reached")
     if ctx.drawdown_24h_pct is not None and ctx.drawdown_24h_pct > limits.max_drawdown_24h_pct:
         v.append("drawdown_24h_limit_exceeded")
     if ctx.slippage_bps is not None and ctx.slippage_bps > limits.max_slippage_bps:
         v.append("slippage_too_high")
     if ctx.gas_estimate_usd is not None and ctx.gas_estimate_usd > limits.max_gas_usd:
         v.append("gas_estimate_too_high")
+    if limits.max_asset_notional_per_day_usd is not None:
+        projected_notional = max(0.0, ctx.asset_notional_today_usd) + max(0.0, amount_usd)
+        if projected_notional > limits.max_asset_notional_per_day_usd + 1e-9:
+            v.append("asset_daily_notional_limit_reached")
 
     # Check if amount would push allocation over the cap (soft — usually handled by capping).
     port = max(0.0, ctx.portfolio_usd)

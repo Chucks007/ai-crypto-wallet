@@ -104,3 +104,36 @@ def test_evaluate_trade_rejects_below_minimum():
     res = evaluate_trade("USDC", "ETH", 10.0, ctx, limits)
     assert res["status"] == "rejected"
     assert "below_minimum_notional" in res["violations"]
+
+
+def test_cap_trade_amount_respects_asset_daily_notional():
+    limits = RiskLimits(
+        max_trade_usd=100.0,
+        max_asset_notional_per_day_usd=120.0,
+    )
+    ctx = RiskContext(
+        portfolio_usd=2000.0,
+        asset_allocations={"ETH": 0.0},
+        asset_notional_today_usd=115.0,
+    )
+    capped, notes = cap_trade_amount_usd(50.0, "ETH", ctx, limits)
+    assert capped == pytest.approx(5.0, abs=1e-9)
+    assert "capped_by_asset_daily_notional" in notes
+
+
+def test_risk_violations_include_asset_daily_limits():
+    limits = RiskLimits(
+        max_asset_trades_per_day=3,
+        max_asset_notional_per_day_usd=150.0,
+    )
+    ctx = RiskContext(
+        portfolio_usd=5000.0,
+        asset_allocations={"ETH": 0.1},
+        asset_trades_today=3,
+        asset_notional_today_usd=140.0,
+    )
+    violations = risk_violations("ETH", 20.0, ctx, limits)
+    assert set(violations) >= {
+        "asset_daily_trade_limit_reached",
+        "asset_daily_notional_limit_reached",
+    }

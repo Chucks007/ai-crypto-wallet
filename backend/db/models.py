@@ -3,18 +3,20 @@ from __future__ import annotations
 import os
 import enum
 from typing import Optional
-from datetime import datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
-    create_engine,
-    ForeignKey,
-    String,
-    Integer,
-    Float,
-    Text,
-    DateTime,
-    Index,
     CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
 
@@ -140,6 +142,62 @@ class RuntimeFlag(Base):
 
     def __repr__(self) -> str:  # pragma: no cover - debug helper
         return f"<RuntimeFlag {self.key}={self.value}>"
+
+
+class AssetDailyUsage(Base):
+    __tablename__ = "asset_daily_usage"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chain_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=False)
+    asset_symbol: Mapped[str] = mapped_column(String, nullable=False)
+    date_utc: Mapped[date] = mapped_column(Date, nullable=False)
+    trade_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    notional_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    last_trade_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        Index("idx_asset_daily_usage_lookup", "chain_id", "asset_symbol", "date_utc"),
+        Index("idx_asset_daily_usage_updated", "updated_at"),
+        CheckConstraint("trade_count >= 0", name="ck_asset_daily_usage_trade_count_nonneg"),
+        CheckConstraint("notional_usd >= 0", name="ck_asset_daily_usage_notional_nonneg"),
+        UniqueConstraint("chain_id", "asset_symbol", "date_utc", name="uq_asset_daily_usage_day"),
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover - debug helper
+        return (
+            f"<AssetDailyUsage chain={self.chain_id} {self.asset_symbol} "
+            f"date={self.date_utc} trades={self.trade_count} notional={self.notional_usd}>"
+        )
+
+
+class AssetRiskLimit(Base):
+    __tablename__ = "asset_risk_limits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chain_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    asset_symbol: Mapped[str] = mapped_column(String, nullable=False)
+    max_trades_per_day: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_notional_usd: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    active_from: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        Index("idx_asset_risk_limits_lookup", "chain_id", "asset_symbol", "active_from"),
+        UniqueConstraint("chain_id", "asset_symbol", "active_from", name="uq_asset_risk_limits_day"),
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover - debug helper
+        return (
+            f"<AssetRiskLimit chain={self.chain_id} {self.asset_symbol} "
+            f"from={self.active_from} trades={self.max_trades_per_day} "
+            f"notional={self.max_notional_usd}>"
+        )
 
 
 def get_engine(url: str | None = None):

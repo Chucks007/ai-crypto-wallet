@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
     # Per-asset allocation cap used in API risk evaluation
     max_allocation_pct: float = Field(default=0.05, alias="MAX_ALLOCATION_PCT")
+    asset_daily_trade_cap: int | None = Field(default=None, alias="ASSET_DAILY_TRADE_CAP")
+    asset_daily_notional_cap_usd: float | None = Field(
+        default=None, alias="ASSET_DAILY_NOTIONAL_CAP_USD"
+    )
     # Execution flags (dev/testnet signer only; disabled by default)
     execution_enabled: bool = Field(default=False, alias="EXECUTION_ENABLED")
     execution_allowed_chain_ids: str = Field(
@@ -103,6 +107,22 @@ class Settings(BaseSettings):
     def _ensure_positive(cls, value: int, info):
         if value < 0:
             raise ValueError(f"{info.field_name} must be non-negative")
+        return value
+
+    @field_validator("asset_daily_trade_cap")
+    @classmethod
+    def _validate_asset_daily_trade_cap(cls, value: int | None):
+        if value is not None and value < 0:
+            raise ValueError("ASSET_DAILY_TRADE_CAP must be non-negative when provided")
+        return value
+
+    @field_validator("asset_daily_notional_cap_usd")
+    @classmethod
+    def _validate_asset_daily_notional_cap(cls, value: float | None):
+        if value is not None and value < 0:
+            raise ValueError(
+                "ASSET_DAILY_NOTIONAL_CAP_USD must be non-negative when provided"
+            )
         return value
 
     @model_validator(mode="after")

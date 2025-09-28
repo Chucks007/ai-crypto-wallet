@@ -138,6 +138,23 @@ Response will include `X-Request-ID: demo-123`. Backend logs include `{"event":"
   - Executes a dry-run trade for approved suggestions.
   - Respects `auto_mode` and `emergency_stop` flags; idempotent per suggestion.
 
+## Risk caps (per-asset / per-day)
+- **Config:**
+  - `ASSET_DAILY_TRADE_CAP` — fallback max approvals per asset per UTC day.
+  - `ASSET_DAILY_NOTIONAL_CAP_USD` — fallback USD notional limit per asset per UTC day.
+  - Per-asset overrides live in the `asset_risk_limits` table (see `backend/db/models.py`). Insert rows with `active_from` to schedule changes.
+- **How it works:**
+  - API + worker load the latest `asset_daily_usage` snapshot before evaluating risk and block when caps are exhausted.
+  - Successful approvals immediately reserve usage (event `asset_cap_usage_reserved`) to prevent later requests from overshooting the cap.
+  - Metrics/logs: `approval_evaluated` includes new violation codes (`asset_daily_*`); dedicated event `asset_cap_guard_triggered` fires on cap/s.
+- **Admin tasks:**
+  - Reset a cap for the current day: `DELETE FROM asset_daily_usage WHERE asset_symbol='ETH' AND date_utc = DATE('now');`
+  - Override (e.g., double limit for today): insert a row into `asset_risk_limits` and reload the API (or rely on lazy reads — no restart required).
+  - Review usage: `SELECT * FROM asset_daily_usage ORDER BY updated_at DESC LIMIT 20;`
+- **Testing tips:**
+  - Use the new pytest suite (`test_asset_usage.py`) for isolated verification.
+  - Set small caps in `.env` (e.g., `ASSET_DAILY_TRADE_CAP=1`) to observe rejection behavior through `/v1/approvals/evaluate`.
+
 ## Execution (testnet EOA)
 - Enable only on testnets with a burner key and tiny funds.
 - Required env:

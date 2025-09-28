@@ -20,6 +20,11 @@ from datetime import UTC, datetime
 from typing import Dict
 
 from backend.core import RiskContext, RiskLimits, evaluate_trade
+from backend.db.asset_usage import (
+    fetch_asset_daily_snapshot,
+    get_effective_asset_limits,
+    upsert_asset_daily_usage,
+)
 from backend.db.models import BalanceSnapshot, Decision, RuntimeFlag, Suggestion, Trade
 from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
@@ -121,10 +126,11 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
         )
 
+        recent_trades_today = _recent_trades_count(db)
         ctx_base = dict(
             portfolio_usd=port,
             asset_allocations=asset_allocations,
-            recent_trades_today=_recent_trades_count(db),
+            recent_trades_today=recent_trades_today,
             slippage_bps=None,
             gas_estimate_usd=None,
             drawdown_24h_pct=0.0,
@@ -139,19 +145,38 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
         approved = 0
         executed = 0
         scanned = 0
+        chain_id = settings.chain_id
         for sug in _pending_suggestions(db, limit=limit):
             scanned += 1
             suggested_amount = float(sug.amount_usd or 0.0)
             if suggested_amount <= 0 or not sug.asset_to or not sug.asset_from:
                 continue
 
-            ctx = RiskContext(**ctx_base)
-            asset_min_trade = resolve_min_trade_usd(sug.asset_to) if sug.asset_to else None
-            limits = (
-                replace(limits_base, min_trade_usd=float(asset_min_trade))
-                if asset_min_trade is not None
-                else limits_base
+            asset_snapshot = fetch_asset_daily_snapshot(
+                db, asset_symbol=sug.asset_to, chain_id=chain_id
             )
+            asset_limit_trades, asset_limit_notional = get_effective_asset_limits(
+                db, asset_symbol=sug.asset_to, chain_id=chain_id
+            )
+            if asset_limit_trades is None:
+                asset_limit_trades = settings.asset_daily_trade_cap
+            if asset_limit_notional is None:
+                asset_limit_notional = settings.asset_daily_notional_cap_usd
+
+            ctx = RiskContext(
+                **ctx_base,
+                asset_trades_today=asset_snapshot.trade_count,
+                asset_notional_today_usd=asset_snapshot.notional_usd,
+            )
+            asset_min_trade = resolve_min_trade_usd(sug.asset_to) if sug.asset_to else None
+            replace_kwargs = {}
+            if asset_min_trade is not None:
+                replace_kwargs["min_trade_usd"] = float(asset_min_trade)
+            if asset_limit_trades is not None:
+                replace_kwargs["max_asset_trades_per_day"] = asset_limit_trades
+            if asset_limit_notional is not None:
+                replace_kwargs["max_asset_notional_per_day_usd"] = float(asset_limit_notional)
+            limits = replace(limits_base, **replace_kwargs) if replace_kwargs else limits_base
             eval_res = evaluate_trade(
                 asset_from=sug.asset_from,
                 asset_to=sug.asset_to,
@@ -194,6 +219,29 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             db.commit()
             db.refresh(dec)
             approved += 1
+
+            # Reserve usage to prevent subsequent approvals from exceeding caps within same day
+            capped_amount = float(eval_res.get("capped_amount_usd") or 0.0)
+            if capped_amount > 0:
+                try:
+                    upsert_asset_daily_usage(
+                        db,
+                        asset_symbol=sug.asset_to,
+                        chain_id=chain_id,
+                        notional_delta_usd=capped_amount,
+                        trade_count_delta=1,
+                        executed_at=datetime.now(UTC),
+                    )
+                    recent_trades_today += 1
+                    ctx_base["recent_trades_today"] = recent_trades_today
+                    db.commit()
+                    log_event(
+                        "asset_cap_usage_reserved",
+                        asset_to=sug.asset_to,
+                        reserved_usd=capped_amount,
+                    )
+                except Exception:
+                    db.rollback()
 
             if execute_dry_run and eval_res.get("capped_amount_usd", 0) > 0:
                 payload = TradeExecuteIn(
