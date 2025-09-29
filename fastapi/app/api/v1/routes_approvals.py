@@ -17,7 +17,11 @@ from sqlalchemy.orm import Session
 from ...config import settings
 from ...db import get_db
 from ...logging_util import log_event
-from ...risk_helpers import count_open_trades, resolve_min_trade_usd
+from ...risk_helpers import (
+    compute_drawdown_24h_pct,
+    count_open_trades,
+    resolve_min_trade_usd,
+)
 from ...schemas import (
     ApprovalCommitIn,
     ApprovalCommitOut,
@@ -81,6 +85,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
     asset_allocations = (
         {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
     )
+    drawdown_pct = compute_drawdown_24h_pct(db, current_portfolio_usd=port)
     chain_id = settings.chain_id
     open_trades = count_open_trades(db)
     asset_snapshot = (
@@ -106,7 +111,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         asset_notional_today_usd=asset_snapshot.notional_usd if asset_snapshot else 0.0,
         slippage_bps=payload.slippage_bps,
         gas_estimate_usd=payload.gas_estimate_usd,
-        drawdown_24h_pct=0.0,  # TODO: compute from performance table once available
+        drawdown_24h_pct=drawdown_pct,
         emergency_stop=_emergency_stop(db),
         concurrent_trades_open=open_trades,
     )
@@ -114,6 +119,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
+        max_drawdown_24h_pct=float(getattr(settings, "max_drawdown_24h_pct", 0.15)),
     )
     min_trade = resolve_min_trade_usd(payload.asset_to)
     if min_trade is not None:
@@ -175,6 +181,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
     asset_allocations = (
         {k: (v / port) if port > 0 else 0.0 for k, v in values_usd.items()} if port > 0 else {}
     )
+    drawdown_pct = compute_drawdown_24h_pct(db, current_portfolio_usd=port)
     open_trades = count_open_trades(db)
     ctx = RiskContext(
         portfolio_usd=port,
@@ -182,7 +189,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
         recent_trades_today=_recent_trades_today(db),
         slippage_bps=payload.slippage_bps,
         gas_estimate_usd=payload.gas_estimate_usd,
-        drawdown_24h_pct=0.0,
+        drawdown_24h_pct=drawdown_pct,
         emergency_stop=_emergency_stop(db),
         concurrent_trades_open=open_trades,
     )
@@ -190,6 +197,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
         max_trade_usd=float(settings.max_trade_size_usd),
         max_slippage_bps=int(settings.max_slippage_bps),
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
+        max_drawdown_24h_pct=float(getattr(settings, "max_drawdown_24h_pct", 0.15)),
     )
     min_trade = resolve_min_trade_usd(payload.asset_to)
     if min_trade is not None:

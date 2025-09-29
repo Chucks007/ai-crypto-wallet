@@ -9,6 +9,7 @@ Unreleased
 - Security: added SECURITY.md consolidating guardrails and signing policy.
 - Config alignment: defaults unified (`MAX_TRADE_SIZE_USD=50`, `MAX_SLIPPAGE_BPS=200`, `MAX_ALLOCATION_PCT=0.05`).
 - Risk: enforce 5% per-asset cap in approvals; add minimum notional ($5) and skip allocation checks when portfolio is empty.
+- Risk: added 24h drawdown circuit breaker (`MAX_DRAWDOWN_24H_PCT`) and enforced concurrent trade cap across approvals, worker, and execution.
 - Execution: introduced `EXECUTION_ENABLED` and `EXECUTION_ALLOWED_CHAIN_IDS`; disabled path returns `execution_not_configured`.
 - Python: standardized on 3.11+ (tested 3.13); updated pyproject and Ruff.
 - Auto-decider: added one-shot worker (`fastapi/app/worker.py`), Make target `make auto`, and secret-gated endpoint `POST /v1/auto-decider/run`.

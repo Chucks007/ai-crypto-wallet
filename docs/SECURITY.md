@@ -17,6 +17,7 @@ Signing Strategy
 
 Implementation Notes
 - Approvals API applies guardrails and caps suggested amount to remaining allocation capacity. Minimum notional ($5) rejects dust trades.
+- Trailing drawdown uses 24h balance snapshots; tune the threshold via `MAX_DRAWDOWN_24H_PCT` (default 0.15).
 - Execution defaults to dry-run; when `dry_run=false` and execution is disabled, API returns `execution_not_configured`.
 - Execution path is asset-allowlisted and does USD→wei conversion using declared `decimals` and price; ERC‑20 approvals are bounded to the exact required amount (no unlimited approvals).
 - Optional `min_trade_usd` per token enforces floor notionals to avoid dust trades slipping through risk checks.

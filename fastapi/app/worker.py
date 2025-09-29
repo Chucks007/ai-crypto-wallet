@@ -33,7 +33,7 @@ from .api.v1.routes_trades import execute_trade
 from .config import settings
 from .db import SessionLocal
 from .logging_util import log_event
-from .risk_helpers import count_open_trades, resolve_min_trade_usd
+from .risk_helpers import compute_drawdown_24h_pct, count_open_trades, resolve_min_trade_usd
 from .schemas import TradeExecuteIn
 
 MIN_INTERVAL_SECONDS = 20  # simple guard to avoid overlapping runs
@@ -128,13 +128,14 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
 
         recent_trades_today = _recent_trades_count(db)
         open_trades = count_open_trades(db)
+        drawdown_pct = compute_drawdown_24h_pct(db, current_portfolio_usd=port)
         ctx_base = dict(
             portfolio_usd=port,
             asset_allocations=asset_allocations,
             recent_trades_today=recent_trades_today,
             slippage_bps=None,
             gas_estimate_usd=None,
-            drawdown_24h_pct=0.0,
+            drawdown_24h_pct=drawdown_pct,
             emergency_stop=False,
             concurrent_trades_open=open_trades,
         )
@@ -142,6 +143,7 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             max_trade_usd=float(settings.max_trade_size_usd),
             max_slippage_bps=int(settings.max_slippage_bps),
             max_allocation_pct=float(getattr(settings, "max_allocation_pct", 0.05)),
+            max_drawdown_24h_pct=float(getattr(settings, "max_drawdown_24h_pct", 0.15)),
             max_concurrent_trades=settings.max_concurrent_trades,
         )
 

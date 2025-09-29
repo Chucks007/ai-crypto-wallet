@@ -3,8 +3,6 @@
 ## High Priority
 
 ## Medium Priority
-- Risk hardening
-  - Per-asset/day caps, drawdown/circuit breaker, max concurrent trades, token allowlist, slippage ceiling.
 - API contracts and DTOs
   - Add `/v1/decisions` filters (by date/status) and pagination; consistent types in web.
 - Web UX
@@ -47,6 +45,8 @@
   - Loading/error states and toasts.
   - Empty-state messages for lists.
   - Minimal theming and spacing tidy-up.
+- Risk hardening
+  - Per-asset/day caps, 24h drawdown circuit breaker, max concurrent trades, token allowlist, and slippage ceiling enforced across approvals, worker, and execution. Tests and docs updated.
 - Approval commit flow
   - POST `/v1/approvals/commit`: call risk evaluate; only create a Decision when approved.
   - Optional: persist evaluation result alongside Decision for auditability.

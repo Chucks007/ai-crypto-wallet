@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
     # Per-asset allocation cap used in API risk evaluation
     max_allocation_pct: float = Field(default=0.05, alias="MAX_ALLOCATION_PCT")
+    max_drawdown_24h_pct: float = Field(default=0.15, alias="MAX_DRAWDOWN_24H_PCT")
     asset_daily_trade_cap: int | None = Field(default=None, alias="ASSET_DAILY_TRADE_CAP")
     asset_daily_notional_cap_usd: float | None = Field(
         default=None, alias="ASSET_DAILY_NOTIONAL_CAP_USD"
@@ -124,6 +125,13 @@ class Settings(BaseSettings):
             raise ValueError(
                 "ASSET_DAILY_NOTIONAL_CAP_USD must be non-negative when provided"
             )
+        return value
+
+    @field_validator("max_drawdown_24h_pct")
+    @classmethod
+    def _validate_drawdown_pct(cls, value: float):
+        if value < 0 or value > 1:
+            raise ValueError("MAX_DRAWDOWN_24H_PCT must be between 0 and 1")
         return value
 
     @field_validator("max_concurrent_trades")

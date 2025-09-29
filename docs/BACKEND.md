@@ -53,7 +53,7 @@ Base URL: `/v1`
 - POST `/approvals/evaluate`
   - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "suggested_amount_usd": 25.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`
   - 200: `{ "status": "approved|rejected", "capped_amount_usd": 25.0, "cap_notes": ["..."], "violations": ["..."] , ... }`
-  - Notes: applies guardrails (per-trade cap, allocation cap, slippage/gas, drawdown, daily trades, emergency stop, concurrent trade cap).
+  - Notes: applies guardrails (per-trade cap, allocation cap, slippage/gas, 24h portfolio drawdown, daily trades, emergency stop, concurrent trade cap). Drawdown is computed from the last 24h of `balance_snapshots` totals and compared against `MAX_DRAWDOWN_24H_PCT` (default 0.15).
 
 - POST `/approvals/commit`
   - Request: evaluate fields + `suggestion_id`, optional `reason`
@@ -116,6 +116,7 @@ Base URL: `/v1`
   - Env files: backend auto-loads `fastapi/.env` (and repo `.env` when not under pytest); copy `fastapi/.env.example` for local runs.
   - `EXECUTION_ENABLED` (default false) and `EXECUTION_ALLOWED_CHAIN_IDS` (e.g., `11155111,84532`)
   - `MAX_CONCURRENT_TRADES` (default 1) caps in-flight submitted trades before accepting new ones
+  - `MAX_DRAWDOWN_24H_PCT` (default 0.15) halts approvals if trailing 24h drawdown exceeds threshold
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
   - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`
   - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)
