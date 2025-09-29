@@ -137,3 +137,14 @@ def test_risk_violations_include_asset_daily_limits():
         "asset_daily_trade_limit_reached",
         "asset_daily_notional_limit_reached",
     }
+
+
+def test_risk_violations_include_concurrent_trade_limit():
+    limits = RiskLimits(max_concurrent_trades=1)
+    ctx = RiskContext(
+        portfolio_usd=1000.0,
+        asset_allocations={"ETH": 0.02},
+        concurrent_trades_open=1,
+    )
+    violations = risk_violations("ETH", 10.0, ctx, limits)
+    assert "concurrent_trade_limit_reached" in violations

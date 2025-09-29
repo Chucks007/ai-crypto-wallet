@@ -12,7 +12,7 @@ from ...db import get_db
 from ...execution import EnvPrivateKeySigner, ExecutionError, ExecutionService, Permit2Authorizer
 from ...execution.token_utils import list_allowlist_metadata
 from ...logging_util import log_event
-from ...risk_helpers import resolve_min_trade_usd
+from ...risk_helpers import count_open_trades, resolve_min_trade_usd
 from ...schemas import (
     ExecutionStatusOut,
     TokenMetadataOut,
@@ -171,6 +171,11 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
     min_trade = resolve_min_trade_usd(payload.asset_to)
     if min_trade is not None and float(payload.amount_usd) < min_trade:
         raise HTTPException(status_code=400, detail="amount_below_minimum_trade")
+
+    if settings.max_concurrent_trades is not None:
+        open_trades = count_open_trades(db)
+        if open_trades >= int(settings.max_concurrent_trades):
+            raise HTTPException(status_code=409, detail="concurrent_trade_limit_reached")
 
     now = datetime.now(UTC)
 

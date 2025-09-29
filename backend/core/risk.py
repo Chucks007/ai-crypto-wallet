@@ -14,6 +14,7 @@ class RiskLimits:
     max_drawdown_24h_pct: float = 0.15   # stop if down >15% in 24h
     max_asset_trades_per_day: Optional[int] = None      # optional per-asset count cap
     max_asset_notional_per_day_usd: Optional[float] = None  # optional per-asset notional cap
+    max_concurrent_trades: Optional[int] = None          # optional concurrent trade cap
     min_trade_usd: float = 5.0           # reject dust trades below this notional
 
 
@@ -28,6 +29,7 @@ class RiskContext:
     gas_estimate_usd: Optional[float] = None
     drawdown_24h_pct: Optional[float] = None  # positive for drawdown, e.g., 0.12 => -12%
     emergency_stop: bool = False
+    concurrent_trades_open: int = 0
 
 
 def cap_trade_amount_usd(
@@ -87,6 +89,11 @@ def risk_violations(
         and ctx.asset_trades_today >= limits.max_asset_trades_per_day
     ):
         v.append("asset_daily_trade_limit_reached")
+    if (
+        limits.max_concurrent_trades is not None
+        and ctx.concurrent_trades_open >= limits.max_concurrent_trades
+    ):
+        v.append("concurrent_trade_limit_reached")
     if ctx.drawdown_24h_pct is not None and ctx.drawdown_24h_pct > limits.max_drawdown_24h_pct:
         v.append("drawdown_24h_limit_exceeded")
     if ctx.slippage_bps is not None and ctx.slippage_bps > limits.max_slippage_bps:

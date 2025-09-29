@@ -33,7 +33,7 @@ from .api.v1.routes_trades import execute_trade
 from .config import settings
 from .db import SessionLocal
 from .logging_util import log_event
-from .risk_helpers import resolve_min_trade_usd
+from .risk_helpers import count_open_trades, resolve_min_trade_usd
 from .schemas import TradeExecuteIn
 
 MIN_INTERVAL_SECONDS = 20  # simple guard to avoid overlapping runs
@@ -127,6 +127,7 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
         )
 
         recent_trades_today = _recent_trades_count(db)
+        open_trades = count_open_trades(db)
         ctx_base = dict(
             portfolio_usd=port,
             asset_allocations=asset_allocations,
@@ -135,11 +136,13 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
             gas_estimate_usd=None,
             drawdown_24h_pct=0.0,
             emergency_stop=False,
+            concurrent_trades_open=open_trades,
         )
         limits_base = RiskLimits(
             max_trade_usd=float(settings.max_trade_size_usd),
             max_slippage_bps=int(settings.max_slippage_bps),
             max_allocation_pct=float(getattr(settings, "max_allocation_pct", 0.05)),
+            max_concurrent_trades=settings.max_concurrent_trades,
         )
 
         approved = 0
@@ -257,6 +260,10 @@ def run_once(execute_dry_run: bool = True, limit: int = 50) -> dict:
                     trade = execute_trade(payload, db)
                     if getattr(trade, "status", None) == "confirmed":
                         executed += 1
+                    elif getattr(trade, "status", None) == "submitted":
+                        ctx_base["concurrent_trades_open"] = (
+                            ctx_base.get("concurrent_trades_open", 0) + 1
+                        )
                 except Exception:
                     # Keep the worker resilient; log to reason on Decision next time if needed.
                     pass

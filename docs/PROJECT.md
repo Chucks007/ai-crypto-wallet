@@ -113,6 +113,7 @@ Note: Keep migration notes here while scope is small; migrate to `docs/CHANGELOG
 - `MAX_SLIPPAGE_BPS`: max slippage in basis points; default `200` (2%)
 - `MAX_TRADE_SIZE_USD`: per-trade cap; default `50`
 - `MAX_ALLOCATION_PCT`: per-asset allocation cap; default `0.05` (5%)
+- `MAX_CONCURRENT_TRADES`: cap on in-flight submitted trades; default `1`
 - `EXECUTION_ENABLED`: enable server-side execution; default `false` (dev/testnet only)
 - `EXECUTION_ALLOWED_CHAIN_IDS`: allowed chain IDs when execution is enabled; default `"11155111,84532"` (Sepolia, Base Sepolia)
 - `TOKEN_ALLOWLIST_JSON`: per-chain token metadata (decimals, optional address, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`)

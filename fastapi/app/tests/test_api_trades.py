@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
-from backend.db.models import Base, Suggestion
+from backend.db.models import Base, Suggestion, Trade
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -57,6 +57,35 @@ def _insert_suggestion(rule: str = "EXEC_TEST") -> int:
             session.commit()
             session.refresh(sug)
             return sug.id
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+
+def _insert_trade(suggestion_id: int, status: str = "submitted") -> int:
+    for dep in app.dependency_overrides.values():
+        gen = dep()
+        session = next(gen)
+        try:
+            trade = Trade(
+                suggestion_id=suggestion_id,
+                executed_at=None,
+                status=status,
+                tx_hash=None,
+                asset_from="USDC",
+                amount_from=25.0,
+                asset_to="ETH",
+                amount_to=None,
+                slippage_bps=None,
+                gas_est_usd=None,
+                error=None,
+            )
+            session.add(trade)
+            session.commit()
+            session.refresh(trade)
+            return trade.id
         finally:
             try:
                 next(gen)
@@ -173,6 +202,25 @@ def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClie
     assert data["status"] == "submitted"
     assert data["tx_hash"] == "0xhash"
     assert captured["amount_usd"] == float(payload["amount_usd"])
+
+
+def test_execute_trade_respects_concurrent_limit(monkeypatch, client: TestClient):
+    monkeypatch.setattr(settings, "max_concurrent_trades", 1, raising=False)
+    first_sug = _insert_suggestion(rule="EXEC_LIMIT_1")
+    _insert_trade(first_sug, status="submitted")
+
+    second_sug = _insert_suggestion(rule="EXEC_LIMIT_2")
+    payload = {
+        "suggestion_id": second_sug,
+        "asset_from": "USDC",
+        "asset_to": "ETH",
+        "amount_usd": 15.0,
+        "dry_run": True,
+    }
+
+    r = client.post("/v1/trades/execute", json=payload)
+    assert r.status_code == 409
+    assert r.json()["detail"] == "concurrent_trade_limit_reached"
 
 
 def test_execution_status_disabled(monkeypatch, client: TestClient):

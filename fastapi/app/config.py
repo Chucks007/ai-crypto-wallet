@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     asset_daily_notional_cap_usd: float | None = Field(
         default=None, alias="ASSET_DAILY_NOTIONAL_CAP_USD"
     )
+    max_concurrent_trades: int | None = Field(default=1, alias="MAX_CONCURRENT_TRADES")
     # Execution flags (dev/testnet signer only; disabled by default)
     execution_enabled: bool = Field(default=False, alias="EXECUTION_ENABLED")
     execution_allowed_chain_ids: str = Field(
@@ -123,6 +124,13 @@ class Settings(BaseSettings):
             raise ValueError(
                 "ASSET_DAILY_NOTIONAL_CAP_USD must be non-negative when provided"
             )
+        return value
+
+    @field_validator("max_concurrent_trades")
+    @classmethod
+    def _validate_max_concurrent_trades(cls, value: int | None):
+        if value is not None and value < 0:
+            raise ValueError("MAX_CONCURRENT_TRADES must be non-negative when provided")
         return value
 
     @model_validator(mode="after")
