@@ -1,10 +1,24 @@
 import axios, { isAxiosError } from "axios";
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || "http://localhost:8000" });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (isAxiosError(error) && !error.response) {
+      const message = "Network request failed – confirm API base URL and backend CORS allow list.";
+      return Promise.reject(new Error(message));
+    }
+    return Promise.reject(error);
+  }
+);
+
+export type SuggestionRule = "RSI_BUY" | "RSI_SELL" | "REBALANCE" | "TAKE_PROFIT" | "EXEC_DEMO";
+export type AssetSymbol = "ETH" | "USDC" | "WBTC";
+
 export type SuggestionCreatePayload = {
-  rule: string;
-  asset_from?: string | null;
-  asset_to?: string | null;
+  rule: SuggestionRule;
+  asset_from?: AssetSymbol | null;
+  asset_to?: AssetSymbol | null;
   amount_usd?: number | null;
   confidence?: number | null;
   params_json?: string | null;
@@ -80,8 +94,8 @@ export async function createDecision(body: DecisionCreatePayload): Promise<Decis
   return r.data as Decision;
 }
 export type ApprovalEvaluatePayload = {
-  asset_from: string;
-  asset_to: string;
+  asset_from: AssetSymbol;
+  asset_to: AssetSymbol;
   suggested_amount_usd: number;
   slippage_bps?: number | null;
   gas_estimate_usd?: number | null;
@@ -89,8 +103,8 @@ export type ApprovalEvaluatePayload = {
 
 export type ApprovalEvaluateResponse = {
   status: string;
-  asset_from: string;
-  asset_to: string;
+  asset_from: AssetSymbol;
+  asset_to: AssetSymbol;
   suggested_amount_usd: number;
   capped_amount_usd: number;
   cap_notes: string[];

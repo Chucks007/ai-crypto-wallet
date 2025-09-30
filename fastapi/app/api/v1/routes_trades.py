@@ -152,8 +152,8 @@ def quote_trade(payload: TradeQuoteIn):
     gross = float(payload.amount_usd)
     net = max(0.0, gross * (1 - slippage / 10_000) - gas)
     return {
-        "asset_from": payload.asset_from,
-        "asset_to": payload.asset_to,
+        "asset_from": payload.asset_from.value,
+        "asset_to": payload.asset_to.value,
         "amount_usd": gross,
         "estimated_to_amount_usd": net,
         "effective_slippage_bps": slippage,
@@ -168,7 +168,10 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
     if not sug:
         raise HTTPException(status_code=404, detail="suggestion not found")
 
-    min_trade = resolve_min_trade_usd(payload.asset_to)
+    asset_from = payload.asset_from.value
+    asset_to = payload.asset_to.value
+
+    min_trade = resolve_min_trade_usd(asset_to)
     if min_trade is not None and float(payload.amount_usd) < min_trade:
         raise HTTPException(status_code=400, detail="amount_below_minimum_trade")
 
@@ -185,9 +188,9 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         executed_at=None,
         status="submitted",
         tx_hash=None,
-        asset_from=payload.asset_from,
+        asset_from=asset_from,
         amount_from=payload.amount_usd,  # store USD amount in amount_from for now
-        asset_to=payload.asset_to,
+        asset_to=asset_to,
         amount_to=None,
         slippage_bps=payload.slippage_bps,
         gas_est_usd=payload.gas_estimate_usd,
@@ -254,8 +257,8 @@ def execute_trade(payload: TradeExecuteIn, db: Session = Depends(get_db)):
         )
         service = ExecutionService(signer, permit2=permit2_authorizer)
         tx_hash = service.execute_swap(
-            asset_from=payload.asset_from,
-            asset_to=payload.asset_to,
+            asset_from=asset_from,
+            asset_to=asset_to,
             amount_usd=float(payload.amount_usd),
             slippage_bps=payload.slippage_bps or settings.max_slippage_bps,
         )

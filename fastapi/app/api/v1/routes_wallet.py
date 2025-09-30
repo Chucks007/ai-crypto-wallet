@@ -56,9 +56,9 @@ def list_suggestions(limit: int = Query(50, ge=1, le=200), db: Session = Depends
 def create_suggestion(payload: SuggestionIn, db: Session = Depends(get_db)):
     sug = Suggestion(
         created_at=datetime.now(UTC),
-        rule=payload.rule,
-        asset_from=payload.asset_from,
-        asset_to=payload.asset_to,
+        rule=payload.rule.value,
+        asset_from=payload.asset_from.value if payload.asset_from else None,
+        asset_to=payload.asset_to.value if payload.asset_to else None,
         amount_usd=payload.amount_usd,
         confidence=payload.confidence,
         params_json=payload.params_json,
@@ -86,7 +86,7 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
     dec = Decision(
         suggestion_id=sug.id,
         decided_at=datetime.now(UTC),
-        decision=payload.decision,
+        decision=payload.decision.value,
         reason=payload.reason,
     )
     db.add(dec)

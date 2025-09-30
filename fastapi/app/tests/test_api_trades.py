@@ -37,7 +37,7 @@ def client(tmp_path):
     app.dependency_overrides.clear()
 
 
-def _insert_suggestion(rule: str = "EXEC_TEST") -> int:
+def _insert_suggestion(rule: str = "EXEC_DEMO") -> int:
     # Insert a Suggestion row and return its ID
     for dep in app.dependency_overrides.values():
         gen = dep()
@@ -155,7 +155,7 @@ def test_execute_dry_run_creates_confirmed_trade(client: TestClient):
 
 
 def test_execute_real_marks_failed_without_integration(client: TestClient):
-    sug_id = _insert_suggestion(rule="EXEC_FAIL")
+    sug_id = _insert_suggestion(rule="EXEC_DEMO")
     payload = {
         "suggestion_id": sug_id,
         "asset_from": "USDC",
@@ -185,7 +185,7 @@ def test_execute_rejects_below_min_trade(client: TestClient):
 
 
 def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClient):
-    sug_id = _insert_suggestion(rule="EXEC_SUCCESS")
+    sug_id = _insert_suggestion(rule="EXEC_DEMO")
     monkeypatch.setattr(settings, "execution_enabled", True, raising=False)
     monkeypatch.setattr(settings, "rpc_url", "http://localhost:8545", raising=False)
     monkeypatch.setattr(settings, "chain_id", 11155111, raising=False)
@@ -226,10 +226,10 @@ def test_execute_real_uses_usd_amount_when_enabled(monkeypatch, client: TestClie
 
 def test_execute_trade_respects_concurrent_limit(monkeypatch, client: TestClient):
     monkeypatch.setattr(settings, "max_concurrent_trades", 1, raising=False)
-    first_sug = _insert_suggestion(rule="EXEC_LIMIT_1")
+    first_sug = _insert_suggestion(rule="REBALANCE")
     _insert_trade(first_sug, status="submitted")
 
-    second_sug = _insert_suggestion(rule="EXEC_LIMIT_2")
+    second_sug = _insert_suggestion(rule="TAKE_PROFIT")
     payload = {
         "suggestion_id": second_sug,
         "asset_from": "USDC",

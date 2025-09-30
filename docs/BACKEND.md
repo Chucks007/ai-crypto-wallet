@@ -39,6 +39,7 @@ Base URL: `/v1`
   - Request: `{ "rule": "RSI_BUY", "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 25.0, "confidence": 0.9, "params_json": "{...}", "reasoning": "RSI<30" }`
   - 200: `{ "id": 1, "created_at": "2025-08-30T12:00:00Z", ...request fields }`
   - 400: validation error
+  - Notes: `rule` must be one of `RSI_BUY`, `RSI_SELL`, `REBALANCE`, `TAKE_PROFIT`, or `EXEC_DEMO`. `asset_from`/`asset_to` accept `ETH`, `USDC`, or `WBTC`. Inputs are normalized case-insensitively before validation.
 
 - POST `/decisions`
   - Request: `{ "suggestion_id": 1, "decision": "approved", "reason": "looks good" }`
@@ -59,6 +60,7 @@ Base URL: `/v1`
   - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "suggested_amount_usd": 25.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`
   - 200: `{ "status": "approved|rejected", "capped_amount_usd": 25.0, "cap_notes": ["..."], "violations": ["..."] , ... }`
   - Notes: applies guardrails (per-trade cap, allocation cap, slippage/gas, 24h portfolio drawdown, daily trades, emergency stop, concurrent trade cap). Drawdown is computed from the last 24h of `balance_snapshots` totals and compared against `MAX_DRAWDOWN_24H_PCT` (default 0.15).
+  - Validation: `asset_from`/`asset_to` must be valid asset symbols (`ETH`, `USDC`, `WBTC`); case-insensitive strings are normalized automatically.
 
 - POST `/approvals/commit`
   - Request: evaluate fields + `suggestion_id`, optional `reason`
@@ -68,12 +70,14 @@ Base URL: `/v1`
 - POST `/trades/quote`
   - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 50.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`
   - 200: `{ "estimated_to_amount_usd": <float>, "effective_slippage_bps": <int>, "gas_estimate_usd": <float>, "dry_run": true, ... }`
+  - Validation: assets must match the enum defined above; requests with unknown symbols are rejected.
 
 - POST `/trades/execute`
   - Request: `{ "suggestion_id": 1, "asset_from": "USDC", "asset_to": "ETH", "amount_usd": 10.0, "slippage_bps": 50, "dry_run": true|false }`
   - 200 (dry_run=true): trade record with `status="confirmed"` and a fake tx hash
   - 200 (dry_run=false, execution disabled): trade record with `status="failed"`, `error="execution_not_configured"`
   - 200 (dry_run=false, execution enabled): converts `amount_usd` → base units using `TOKEN_ALLOWLIST_JSON` (requires `decimals` and either `usd_price` or `coingecko_id`), ensures bounded ERC‑20 approvals, builds a 1inch swap tx, simulates via `eth_call`, then signs and broadcasts. Precise errors bubble up (e.g., `token_not_allowlisted`, `token_address_missing`, `token_price_unavailable`, `simulation_reverted`).
+  - Validation: `asset_from`/`asset_to` adhere to the same enum rules as approval endpoints.
 
 - GET `/execution/status`
   - 200: `{ "signer": { "ready": bool, "address": string|null }, "permit2": { "enabled": bool, "ready": bool, "contract_address": string|null, "spender": string|null } }`
@@ -124,7 +128,8 @@ Base URL: `/v1`
   - `MAX_DRAWDOWN_24H_PCT` (default 0.15) halts approvals if trailing 24h drawdown exceeds threshold
   - `RPC_URL`, `CHAIN_ID`, `WALLET_PRIVATE_KEY` (testnets only; burner key)
   - `TOKEN_ALLOWLIST_JSON` (required for execution): per-chain tokens with `decimals`, optional `address`, optional `min_trade_usd`, and either `usd_price` or `coingecko_id`
-  - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional)
+  - `CORS_ALLOW_ORIGINS` (optional, comma-separated origins), `CORS_ALLOW_ORIGINS_REGEX` (optional regex), `CORS_ALLOW_METHODS`, `CORS_ALLOW_HEADERS`, `CORS_ALLOW_CREDENTIALS`. Defaults allow `http://localhost:5173` and standard methods/headers for local Vite dev. Production must set at least one explicit allow-list entry; if both origin list and regex are empty, CORS is disabled.
+  - `ONEINCH_API_KEY` (optional), `COINGECKO_PRICE_TTL_SECONDS` (optional; clamped between 10 and 3600 seconds)
   - Permit2 (optional):
     - `PERMIT2_ENABLED` (default false)
     - `PERMIT2_CONTRACT_ADDRESS` (required when enabled)

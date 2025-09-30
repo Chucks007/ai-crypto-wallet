@@ -84,7 +84,7 @@ def _seed_balances(SessionLocal):
         session.close()
 
 
-def _insert_suggestion(SessionLocal, rule: str = "AUTO_TEST") -> int:
+def _insert_suggestion(SessionLocal, rule: str = "REBALANCE") -> int:
     session = SessionLocal()
     try:
         sug = Suggestion(

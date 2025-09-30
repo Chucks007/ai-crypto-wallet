@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from ..config import settings
 from .errors import ExecutionError
 
 
@@ -191,7 +192,7 @@ def _resolve_usd_price(meta: TokenMetadata) -> Decimal:
         return meta.usd_price
     if meta.coingecko_id:
         # TTL cache to avoid frequent external calls
-        ttl_seconds = int(os.environ.get("COINGECKO_PRICE_TTL_SECONDS", "60") or "60")
+        ttl_seconds = int(settings.coingecko_price_ttl_seconds)
         now = time.monotonic()
         with _PRICE_CACHE_LOCK:
             cached = _PRICE_CACHE.get(meta.coingecko_id)

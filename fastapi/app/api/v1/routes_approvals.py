@@ -80,6 +80,8 @@ def _emergency_stop(db: Session) -> bool:
 
 @router.post("/approvals/evaluate", response_model=ApprovalEvaluateOut)
 def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db)):
+    asset_from = payload.asset_from.value
+    asset_to = payload.asset_to.value
     values_usd = _latest_values_usd(db)
     port = sum(values_usd.values())
     asset_allocations = (
@@ -88,15 +90,9 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
     drawdown_pct = compute_drawdown_24h_pct(db, current_portfolio_usd=port)
     chain_id = settings.chain_id
     open_trades = count_open_trades(db)
-    asset_snapshot = (
-        fetch_asset_daily_snapshot(db, asset_symbol=payload.asset_to, chain_id=chain_id)
-        if payload.asset_to
-        else None
-    )
-    asset_limit_trades, asset_limit_notional = (
-        get_effective_asset_limits(db, asset_symbol=payload.asset_to, chain_id=chain_id)
-        if payload.asset_to
-        else (None, None)
+    asset_snapshot = fetch_asset_daily_snapshot(db, asset_symbol=asset_to, chain_id=chain_id)
+    asset_limit_trades, asset_limit_notional = get_effective_asset_limits(
+        db, asset_symbol=asset_to, chain_id=chain_id
     )
     if asset_limit_trades is None:
         asset_limit_trades = settings.asset_daily_trade_cap
@@ -121,7 +117,7 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
         max_drawdown_24h_pct=float(getattr(settings, "max_drawdown_24h_pct", 0.15)),
     )
-    min_trade = resolve_min_trade_usd(payload.asset_to)
+    min_trade = resolve_min_trade_usd(asset_to)
     if min_trade is not None:
         limits_kwargs["min_trade_usd"] = float(min_trade)
     if asset_limit_trades is not None:
@@ -132,8 +128,8 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
         limits_kwargs["max_concurrent_trades"] = int(settings.max_concurrent_trades)
     limits = RiskLimits(**limits_kwargs)
     result = evaluate_trade(
-        asset_from=payload.asset_from,
-        asset_to=payload.asset_to,
+        asset_from=asset_from,
+        asset_to=asset_to,
         suggested_amount_usd=payload.suggested_amount_usd,
         ctx=ctx,
         limits=limits,
@@ -141,8 +137,8 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
     try:
         log_event(
             "approval_evaluated",
-            asset_from=payload.asset_from,
-            asset_to=payload.asset_to,
+            asset_from=asset_from,
+            asset_to=asset_to,
             suggested_amount_usd=payload.suggested_amount_usd,
             status=result.get("status"),
             capped_amount_usd=result.get("capped_amount_usd"),
@@ -152,13 +148,13 @@ def approvals_evaluate(payload: ApprovalEvaluateIn, db: Session = Depends(get_db
             "asset_daily_trade_limit_reached",
             "asset_daily_notional_limit_reached",
         }
-        if payload.asset_to and (
+        if asset_to and (
             asset_cap_codes.intersection(set(result.get("violations") or []))
             or "capped_by_asset_daily_notional" in (result.get("cap_notes") or [])
         ):
             log_event(
                 "asset_cap_guard_triggered",
-                asset_to=payload.asset_to,
+                asset_to=asset_to,
                 violations=result.get("violations"),
                 cap_notes=result.get("cap_notes"),
             )
@@ -199,15 +195,17 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
         max_allocation_pct=float(getattr(settings, "max_allocation_pct", 1.0)),
         max_drawdown_24h_pct=float(getattr(settings, "max_drawdown_24h_pct", 0.15)),
     )
-    min_trade = resolve_min_trade_usd(payload.asset_to)
+    asset_from = payload.asset_from.value
+    asset_to = payload.asset_to.value
+    min_trade = resolve_min_trade_usd(asset_to)
     if min_trade is not None:
         limits_kwargs["min_trade_usd"] = float(min_trade)
     if settings.max_concurrent_trades is not None:
         limits_kwargs["max_concurrent_trades"] = int(settings.max_concurrent_trades)
     limits = RiskLimits(**limits_kwargs)
     evaluation = evaluate_trade(
-        asset_from=payload.asset_from,
-        asset_to=payload.asset_to,
+        asset_from=asset_from,
+        asset_to=asset_to,
         suggested_amount_usd=payload.suggested_amount_usd,
         ctx=ctx,
         limits=limits,
@@ -254,11 +252,11 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(dec)
     capped_amount = float(evaluation.get("capped_amount_usd") or 0.0)
-    if capped_amount > 0 and payload.asset_to:
+    if capped_amount > 0 and asset_to:
         try:
             upsert_asset_daily_usage(
                 db,
-                asset_symbol=payload.asset_to,
+                asset_symbol=asset_to,
                 chain_id=settings.chain_id,
                 notional_delta_usd=capped_amount,
                 trade_count_delta=1,
@@ -267,7 +265,7 @@ def approvals_commit(payload: ApprovalCommitIn, db: Session = Depends(get_db)):
             db.commit()
             log_event(
                 "asset_cap_usage_reserved",
-                asset_to=payload.asset_to,
+                asset_to=asset_to,
                 reserved_usd=capped_amount,
             )
         except Exception:

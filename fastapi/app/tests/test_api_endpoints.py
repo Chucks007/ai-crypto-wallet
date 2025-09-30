@@ -72,6 +72,26 @@ def test_suggestions_crud_and_decision(client: TestClient):
     assert dec["decision"] == "approved"
 
 
+def test_suggestions_reject_invalid_inputs(client: TestClient):
+    bad_rule = {
+        "rule": "BAD_RULE",
+        "asset_from": "USDC",
+        "asset_to": "ETH",
+        "amount_usd": 25.0,
+    }
+    r = client.post("/v1/suggestions", json=bad_rule)
+    assert r.status_code == 422
+
+    bad_asset = {
+        "rule": "RSI_BUY",
+        "asset_from": "DOGE",
+        "asset_to": "ETH",
+        "amount_usd": 10.0,
+    }
+    r2 = client.post("/v1/suggestions", json=bad_asset)
+    assert r2.status_code == 422
+
+
 def test_balances_latest_snapshot(client: TestClient):
     # Insert balance snapshots via the DB dependency
     # Use direct DB access through override to seed data

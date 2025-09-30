@@ -4,7 +4,7 @@
 
 ## Medium Priority
 - Security & config
-  - Harden CORS for non-dev; validate inputs (enums for rules/assets); document prod settings; optional price cache TTL.
+  - [Done → see Completed]
 
 ## Low Priority / Later Milestones
 - Smart wallet & custody (phase 2/3)
@@ -71,3 +71,8 @@
   - Docs updated: allowlist schema, runbook execution section; `.env.example` sample updated.
   - Tests added: conversion helper (allowlist, CoinGecko, TTL), execution path happy‑path (monkeypatched).
   - Allowlist `min_trade_usd` enforces per-asset minimum notionals in approvals, auto-decider, and execution.
+- Security & config
+  - CORS defaults hardened for non-dev with env-driven allow-list and regex support; prod docs updated.
+  - Enums for suggestion rules, asset symbols, and decisions enforced end-to-end (API + frontend). Case-insensitive normalization prevents drift.
+  - CoinGecko price cache TTL configurable via settings with bounds clamped between 10–3600 seconds.
+  - Tests cover CORS middleware, settings parsing, and token utils TTL; frontend interceptors surface network/CORS issues.

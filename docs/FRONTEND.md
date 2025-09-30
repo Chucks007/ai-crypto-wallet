@@ -25,6 +25,13 @@
 - Linting: `npm run lint`
 - Test setup lives in `src/test/setup.ts`; component specs reside under `src/components/__tests__/`
 
+## Environment & CORS
+- Set `VITE_API_BASE` to the FastAPI origin you intend to call (default `http://localhost:8000`).
+- Ensure the same origin is listed in the backend `CORS_ALLOW_ORIGINS` or matches `CORS_ALLOW_ORIGINS_REGEX`; otherwise browsers will block requests and the UI raises a network toast.
+- Production builds should rely on HTTPS origins on both sides to avoid mixed-content issues.
+- Asset pickers and approval flows expect symbols that map to the backend enum (`ETH`, `USDC`, `WBTC`). Suggestions with unknown symbols are surfaced to the user before submission.
+- Axios interceptors surface CORS or connectivity issues with an actionable toast so operators can adjust configuration quickly.
+
 ## Views
 - **Overview**
 	- Metrics rail powered by `GET /v1/metrics/daily` (suggestions, decisions, trades, last auto-worker runs)

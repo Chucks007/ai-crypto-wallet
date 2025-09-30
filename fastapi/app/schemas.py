@@ -1,15 +1,49 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
+from backend.db.models import DecisionType
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class SuggestionRule(str, Enum):
+    RSI_BUY = "RSI_BUY"
+    RSI_SELL = "RSI_SELL"
+    REBALANCE = "REBALANCE"
+    TAKE_PROFIT = "TAKE_PROFIT"
+    EXEC_DEMO = "EXEC_DEMO"
+
+    @classmethod
+    def _missing_(cls, value):  # type: ignore[override]
+        if isinstance(value, str):
+            normalized = value.strip().upper()
+            for member in cls:
+                if member.value == normalized:
+                    return member
+        return None
+
+
+class AssetSymbol(str, Enum):
+    ETH = "ETH"
+    USDC = "USDC"
+    WBTC = "WBTC"
+
+    @classmethod
+    def _missing_(cls, value):  # type: ignore[override]
+        if isinstance(value, str):
+            normalized = value.strip().upper()
+            for member in cls:
+                if member.value == normalized:
+                    return member
+        return None
+
+
 class SuggestionIn(BaseModel):
-    rule: str
-    asset_from: Optional[str] = None
-    asset_to: Optional[str] = None
+    rule: SuggestionRule
+    asset_from: Optional[AssetSymbol] = None
+    asset_to: Optional[AssetSymbol] = None
     amount_usd: Optional[float] = Field(default=None, ge=0)
     confidence: Optional[float] = Field(default=None, ge=0, le=1)
     params_json: Optional[str] = None
@@ -24,7 +58,7 @@ class SuggestionOut(SuggestionIn):
 
 class DecisionIn(BaseModel):
     suggestion_id: int
-    decision: str = Field(pattern="^(approved|rejected|expired|cancelled)$")
+    decision: DecisionType
     reason: Optional[str] = None
 
 
@@ -55,8 +89,8 @@ class BalanceSnapshotOut(BaseModel):
 
 
 class ApprovalEvaluateIn(BaseModel):
-    asset_from: str
-    asset_to: str
+    asset_from: AssetSymbol
+    asset_to: AssetSymbol
     suggested_amount_usd: float = Field(ge=0)
     slippage_bps: int | None = Field(default=None, ge=0)
     gas_estimate_usd: float | None = Field(default=None, ge=0)
@@ -74,8 +108,8 @@ class ApprovalEvaluateOut(BaseModel):
 
 class ApprovalCommitIn(BaseModel):
     suggestion_id: int
-    asset_from: str
-    asset_to: str
+    asset_from: AssetSymbol
+    asset_to: AssetSymbol
     suggested_amount_usd: float = Field(ge=0)
     slippage_bps: int | None = Field(default=None, ge=0)
     gas_estimate_usd: float | None = Field(default=None, ge=0)
@@ -110,8 +144,8 @@ class EmergencyStopSetIn(BaseModel):
 
 # Trades / Execution
 class TradeQuoteIn(BaseModel):
-    asset_from: str
-    asset_to: str
+    asset_from: AssetSymbol
+    asset_to: AssetSymbol
     amount_usd: float = Field(ge=0)
     slippage_bps: int | None = Field(default=None, ge=0)
     gas_estimate_usd: float | None = Field(default=None, ge=0)
@@ -129,8 +163,8 @@ class TradeQuoteOut(BaseModel):
 
 class TradeExecuteIn(BaseModel):
     suggestion_id: int
-    asset_from: str
-    asset_to: str
+    asset_from: AssetSymbol
+    asset_to: AssetSymbol
     amount_usd: float = Field(ge=0)
     slippage_bps: int | None = Field(default=None, ge=0)
     gas_estimate_usd: float | None = Field(default=None, ge=0)

@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import pytest
 
+from app.config import settings
 from app.execution.errors import ExecutionError
 from app.execution.token_utils import (
     clear_price_cache,
@@ -19,7 +20,7 @@ from app.execution.token_utils import (
 @pytest.fixture(autouse=True)
 def reset_allowlist(monkeypatch):
     monkeypatch.delenv("TOKEN_ALLOWLIST_JSON", raising=False)
-    monkeypatch.delenv("COINGECKO_PRICE_TTL_SECONDS", raising=False)
+    monkeypatch.setattr(settings, "coingecko_price_ttl_seconds", 60, raising=False)
     clear_token_allowlist_cache()
     clear_price_cache()
     yield
@@ -109,7 +110,7 @@ def test_coingecko_ttl_cache(monkeypatch):
         "TOKEN_ALLOWLIST_JSON",
         json.dumps({"11155111": {"ETH": {"decimals": 18, "coingecko_id": "ethereum"}}}),
     )
-    monkeypatch.setenv("COINGECKO_PRICE_TTL_SECONDS", "3600")
+    monkeypatch.setattr(settings, "coingecko_price_ttl_seconds", 3600, raising=False)
     clear_token_allowlist_cache()
     clear_price_cache()
     monkeypatch.setattr("app.execution.token_utils.httpx.Client", CountingClient)

@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     coingecko_base_url: str = Field(
         default="https://api.coingecko.com/api/v3", alias="COINGECKO_BASE_URL"
     )
+    coingecko_price_ttl_seconds: int = Field(
+        default=60, alias="COINGECKO_PRICE_TTL_SECONDS"
+    )
     max_slippage_bps: int = Field(default=200, alias="MAX_SLIPPAGE_BPS")
     max_trade_size_usd: int = Field(default=50, alias="MAX_TRADE_SIZE_USD")
     # Per-asset allocation cap used in API risk evaluation
@@ -103,6 +106,20 @@ class Settings(BaseSettings):
     permit2_min_validity_seconds: int = Field(
         default=60, alias="PERMIT2_MIN_VALIDITY_SECONDS"
     )
+    cors_allow_origins: list[str] | str | None = Field(
+        default_factory=list,
+        alias="CORS_ALLOW_ORIGINS",
+    )
+    cors_allow_origin_regex: str | None = Field(default=None, alias="CORS_ALLOW_ORIGINS_REGEX")
+    cors_allow_methods: list[str] | str | None = Field(
+        default_factory=lambda: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        alias="CORS_ALLOW_METHODS",
+    )
+    cors_allow_headers: list[str] | str | None = Field(
+        default_factory=lambda: ["*"],
+        alias="CORS_ALLOW_HEADERS",
+    )
+    cors_allow_credentials: bool = Field(default=True, alias="CORS_ALLOW_CREDENTIALS")
 
     @field_validator("permit2_default_expiration_seconds", "permit2_min_validity_seconds")
     @classmethod
@@ -110,6 +127,21 @@ class Settings(BaseSettings):
         if value < 0:
             raise ValueError(f"{info.field_name} must be non-negative")
         return value
+
+    @field_validator("cors_allow_origins", "cors_allow_methods", "cors_allow_headers", mode="before")
+    @classmethod
+    def _split_csv(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            parts = [part.strip() for part in value.split(",")]
+            return [part for part in parts if part]
+        return value
+
+    @field_validator("coingecko_price_ttl_seconds")
+    @classmethod
+    def _validate_price_ttl(cls, value: int):
+        return max(10, min(3600, int(value)))
 
     @field_validator("asset_daily_trade_cap")
     @classmethod

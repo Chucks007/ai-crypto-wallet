@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { commitApproval, type ApprovalCommitResponse, type ApprovalEvaluateResponse } from "../lib/api";
+import {
+  commitApproval,
+  type ApprovalCommitResponse,
+  type ApprovalEvaluateResponse,
+  type AssetSymbol,
+} from "../lib/api";
 import { useToast } from "./useToast";
 
 type Props = {
@@ -13,6 +18,18 @@ type Props = {
   onDecisionCreated?: () => void;
 };
 
+const DEFAULT_ASSET_FROM: AssetSymbol = "USDC";
+const DEFAULT_ASSET_TO: AssetSymbol = "ETH";
+const KNOWN_ASSET_SYMBOLS: readonly AssetSymbol[] = ["ETH", "USDC", "WBTC"];
+
+function normalizeAssetSymbol(value: unknown): AssetSymbol | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
+  return (KNOWN_ASSET_SYMBOLS as readonly string[]).includes(normalized)
+    ? (normalized as AssetSymbol)
+    : null;
+}
+
 export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props) {
   const [slippageBps, setSlippageBps] = useState<number>(50);
   const [gasUsd, setGasUsd] = useState<number>(1);
@@ -22,6 +39,14 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
   const { show } = useToast();
   const modalTitleId = useMemo(() => `approve-modal-${suggestion.id}`, [suggestion.id]);
   const formattedAmount = useMemo(() => Number(suggestion.amount_usd || 0).toFixed(2), [suggestion.amount_usd]);
+  const assetFrom = useMemo(
+    () => normalizeAssetSymbol(suggestion.asset_from) ?? DEFAULT_ASSET_FROM,
+    [suggestion.asset_from],
+  );
+  const assetTo = useMemo(
+    () => normalizeAssetSymbol(suggestion.asset_to) ?? DEFAULT_ASSET_TO,
+    [suggestion.asset_to],
+  );
 
   async function handleEvaluateAndMaybeApprove() {
     setLoading(true);
@@ -29,8 +54,8 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
     try {
       const commit: ApprovalCommitResponse = await commitApproval({
         suggestion_id: suggestion.id,
-        asset_from: suggestion.asset_from || "USDC",
-        asset_to: suggestion.asset_to || "ETH",
+        asset_from: assetFrom,
+        asset_to: assetTo,
         suggested_amount_usd: suggestion.amount_usd || 0,
         slippage_bps: slippageBps,
         gas_estimate_usd: gasUsd,
@@ -69,7 +94,7 @@ export function ApprovalModal({ suggestion, onClose, onDecisionCreated }: Props)
         </header>
         <div className="modal__body">
           <div className="modal__summary">
-            <span><strong>Asset:</strong> {suggestion.asset_from} → {suggestion.asset_to}</span>
+            <span><strong>Asset:</strong> {assetFrom} → {assetTo}</span>
             <span><strong>Amount:</strong> ${formattedAmount}</span>
           </div>
           <div className="modal__grid">
