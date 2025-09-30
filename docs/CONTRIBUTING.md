@@ -35,6 +35,7 @@ Examples:
 - Run backend tests: `cd fastapi && pytest -q` (tests ignore repo `.env` so defaults stay deterministic).
 - Run API locally: `make api` → http://localhost:8000 (OpenAPI at `/docs`).
 - Run web locally: `cd web && npm install && npm run dev` → http://localhost:5173
+- Frontend quality gates: `npm run lint` and `npm run test -- --run` inside `web/`.
 
 ## Links
 - Security & guardrails: `docs/SECURITY.md`

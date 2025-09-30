@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { getBalances, getDailyMetrics, type DailyMetrics } from "../lib/api";
+import { getBalances, getDailyMetrics, type BalanceSnapshot, type DailyMetrics } from "../lib/api";
 import { BalanceCard } from "../components/BalanceCard";
 import { RiskBar } from "../components/RiskBar";
 import { Spinner } from "../components/Spinner";
 import { EmptyState } from "../components/EmptyState";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/useToast";
 
 export default function Overview() {
-  const [balances, setBalances] = useState<any[]>([]);
+  const [balances, setBalances] = useState<BalanceSnapshot[]>([]);
   const [metrics, setMetrics] = useState<DailyMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,77 +30,88 @@ export default function Overview() {
       })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false };
-  }, []);
+  }, [show]);
   const total = useMemo(() => balances.reduce((s, x) => s + (x.usd_value || 0), 0), [balances]);
   const tradesToday = useMemo(() => {
     if (!metrics) return 0;
     return Object.values(metrics.today?.trades || {}).reduce((s, v) => s + (v || 0), 0);
   }, [metrics]);
+  const tradesByStatus = useMemo(() => Object.entries(metrics?.today.trades ?? {}), [metrics]);
+  const tradesTotal = useMemo(
+    () => tradesByStatus.reduce((sum, [, value]) => sum + (value || 0), 0),
+    [tradesByStatus],
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="page page--stack">
       <RiskBar portfolioUsd={total} tradesToday={tradesToday} />
+
       {metrics && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 12,
-          padding: 12,
-          border: "1px solid #e5e7eb",
-          borderRadius: 8,
-          background: "#fafafa",
-        }}>
-          <div>
-            <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase" }}>Suggestions Today</div>
-            <div style={{ fontSize: 24, fontWeight: 700 }}>{metrics.today.suggestions}</div>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <span className="stat-card__label">Suggestions Today</span>
+            <span className="stat-card__value">{metrics.today.suggestions}</span>
           </div>
-          <div>
-            <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase" }}>Decisions Today</div>
-            <div style={{ fontSize: 14 }}>
+          <div className="stat-card">
+            <span className="stat-card__label">Decisions Today</span>
+            <div className="stat-card__list">
               {Object.entries(metrics.today.decisions || {}).length === 0 ? (
-                <span>—</span>
+                <span className="stat-card__empty">—</span>
               ) : (
                 Object.entries(metrics.today.decisions).map(([k, v]) => (
-                  <span key={k} style={{ marginRight: 12 }}>
-                    <b>{k}</b>: {v}
-                  </span>
+                  <span key={k}><b>{k}</b>: {v}</span>
                 ))
               )}
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase" }}>Trades Today</div>
-            <div style={{ fontSize: 14 }}>
-              {Object.entries(metrics.today.trades || {}).length === 0 ? (
-                <span>—</span>
+          <a className="stat-card stat-card--link" href="#/history#trades">
+            <span className="stat-card__label">Trades Today</span>
+            <span className="stat-card__value">{tradesTotal}</span>
+            <div className="stat-card__list">
+              {tradesByStatus.length === 0 ? (
+                <span className="stat-card__empty">No trades yet</span>
               ) : (
-                Object.entries(metrics.today.trades).map(([k, v]) => (
-                  <span key={k} style={{ marginRight: 12 }}>
-                    <b>{k}</b>: {v}
-                  </span>
+                tradesByStatus.map(([k, v]) => (
+                  <span key={k}><b>{k}</b>: {v}</span>
                 ))
               )}
             </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase" }}>Auto Worker</div>
-            <div style={{ fontSize: 13, color: "#374151" }}>
-              <div>Last start: <code>{metrics.last_worker.last_start ? new Date(metrics.last_worker.last_start).toLocaleString() : "—"}</code></div>
-              <div>Last finish: <code>{metrics.last_worker.last_finish ? new Date(metrics.last_worker.last_finish).toLocaleString() : "—"}</code></div>
+            <span className="stat-card__cta">View full history →</span>
+          </a>
+          <div className="stat-card">
+            <span className="stat-card__label">Auto Worker</span>
+            <div className="stat-card__list">
+              <span>Last start: <code>{metrics.last_worker.last_start ? new Date(metrics.last_worker.last_start).toLocaleString() : "—"}</code></span>
+              <span>Last finish: <code>{metrics.last_worker.last_finish ? new Date(metrics.last_worker.last_finish).toLocaleString() : "—"}</code></span>
             </div>
           </div>
         </div>
       )}
+
       {metricsError && (
-        <div style={{ color: "#b91c1c", fontSize: 13 }}>Failed to load metrics: {metricsError}</div>
-      )}
-      {loading && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Spinner /> Loading balances…
+        <div className="alert alert--error" role="alert">
+          Failed to load metrics: {metricsError}
         </div>
       )}
-      {error && !loading && <pre style={{ color: "#b91c1c", whiteSpace: "pre-wrap" }}>{error}</pre>}
+
+      {loading && (
+        <div className="stack stack--row stack--center">
+          <Spinner />
+          <span>Loading balances…</span>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="alert alert--error" role="alert">
+          {error}
+        </div>
+      )}
+
       {!loading && balances.length === 0 ? (
-        <EmptyState title="No balances yet" subtitle="Once the backend returns assets, your portfolio appears here." />
+        <EmptyState
+          title="No balances yet"
+          subtitle="Once the backend returns assets, your portfolio appears here."
+        />
       ) : (
         <BalanceCard items={balances} />
       )}

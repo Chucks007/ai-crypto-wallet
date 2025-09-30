@@ -3,6 +3,10 @@
 All notable changes to this project will be documented here.
 
 Unreleased
+- Frontend: refreshed Overview/Suggestions/History UX with `TradesTable`, `StatusChip`, improved toasts, and responsive layouts backed by typed trade helpers.
+- Frontend tooling: added Vitest + Testing Library setup with component specs (`StatusChip`, `TradesTable`) and npm scripts (`npm run lint`, `npm run test -- --run`).
+- Backend tests: added `/v1/trades` regression ensuring descending order and status coverage.
+- Docs: refreshed README quick start, FRONTEND guidance, RUNBOOK tests, and NEXT_STEPS roadmap to reflect the new UI and test workflow.
 - Execution: added optional Permit2 signing path with configurable contract/spender, automatic permit minting, and bounded-approval fallback. Exposed readiness via `GET /v1/execution/status`.
 - Tests: covered Permit2 authorizer and execution status endpoint; ensures signatures are properly encoded.
 - Docs: moved core docs into `docs/` as PROJECT.md, BACKEND.md, FRONTEND.md, RUNBOOK.md.

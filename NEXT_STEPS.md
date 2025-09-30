@@ -3,8 +3,6 @@
 ## High Priority
 
 ## Medium Priority
-- Web UX
-  - Expose trades list (with status chips) and continue UI polish for approvals/trades.
 - Security & config
   - Harden CORS for non-dev; validate inputs (enums for rules/assets); document prod settings; optional price cache TTL.
 
@@ -45,6 +43,10 @@
   - Loading/error states and toasts.
   - Empty-state messages for lists.
   - Minimal theming and spacing tidy-up.
+- Trade history UX
+  - Trades table with status chips, responsive cards, and shared data header metrics.
+  - Typed trade helpers and toasts around approval/commit flows.
+  - Vitest component coverage for status chips and table rendering.
 - Risk hardening
   - Per-asset/day caps, 24h drawdown circuit breaker, max concurrent trades, token allowlist, and slippage ceiling enforced across approvals, worker, and execution. Tests and docs updated.
 - Approval commit flow

@@ -1,11 +1,6 @@
-type Balance = {
-  id: number;
-  asset: string;
-  balance: number;
-  usd_value?: number | null;
-};
+import type { BalanceSnapshot } from "../lib/api";
 
-export function BalanceCard({ items }: { items: Balance[] }) {
+export function BalanceCard({ items }: { items: BalanceSnapshot[] }) {
   const total = items.reduce((s, x) => s + (x.usd_value || 0), 0);
   return (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 16 }}>

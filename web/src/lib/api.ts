@@ -1,5 +1,30 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || "http://localhost:8000" });
+
+export type SuggestionCreatePayload = {
+  rule: string;
+  asset_from?: string | null;
+  asset_to?: string | null;
+  amount_usd?: number | null;
+  confidence?: number | null;
+  params_json?: string | null;
+  reasoning?: string | null;
+};
+
+export type Suggestion = SuggestionCreatePayload & {
+  id: number;
+  created_at: string;
+};
+
+export type BalanceSnapshot = {
+  id: number;
+  asset: string;
+  balance: number;
+  usd_price?: number | null;
+  usd_value?: number | null;
+  source?: string | null;
+  captured_at?: string | null;
+};
 
 export type DecisionStatus = "approved" | "rejected" | "expired" | "cancelled";
 
@@ -33,9 +58,18 @@ export type DecisionCreatePayload = {
   reason?: string | null;
 };
 export async function getHealth() { const r = await api.get("/v1/health"); return r.data; }
-export async function getBalances() { const r = await api.get("/v1/balances"); return r.data; }
-export async function listSuggestions(limit = 50) { const r = await api.get(`/v1/suggestions`, { params: { limit } }); return r.data; }
-export async function createSuggestion(body: any) { const r = await api.post(`/v1/suggestions`, body); return r.data; }
+export async function getBalances(): Promise<BalanceSnapshot[]> {
+  const r = await api.get(`/v1/balances`);
+  return (r.data ?? []) as BalanceSnapshot[];
+}
+export async function listSuggestions(limit = 50): Promise<Suggestion[]> {
+  const r = await api.get(`/v1/suggestions`, { params: { limit } });
+  return (r.data ?? []) as Suggestion[];
+}
+export async function createSuggestion(body: SuggestionCreatePayload): Promise<Suggestion> {
+  const r = await api.post(`/v1/suggestions`, body);
+  return r.data as Suggestion;
+}
 export async function listDecisions(params: DecisionListParams = {}): Promise<DecisionListResponse> {
   const query = { page: 1, page_size: 50, ...params };
   const r = await api.get(`/v1/decisions`, { params: query });
@@ -45,33 +79,109 @@ export async function createDecision(body: DecisionCreatePayload): Promise<Decis
   const r = await api.post(`/v1/decisions`, body);
   return r.data as Decision;
 }
-export async function evaluateApproval(body: any) { const r = await api.post(`/v1/approvals/evaluate`, body); return r.data; }
-export async function commitApproval(body: any) { const r = await api.post(`/v1/approvals/commit`, body); return r.data; }
-export async function listRuntimeFlags() { const r = await api.get(`/v1/runtime-flags`); return r.data; }
-export async function getEmergencyStop() { const r = await api.get(`/v1/runtime-flags/emergency-stop`); return r.data; }
-export async function setEmergencyStop(enabled: boolean) { const r = await api.put(`/v1/runtime-flags/emergency-stop`, { enabled }); return r.data; }
-export async function listTrades(limit = 50) { const r = await api.get(`/v1/trades`, { params: { limit } }); return r.data; }
+export type ApprovalEvaluatePayload = {
+  asset_from: string;
+  asset_to: string;
+  suggested_amount_usd: number;
+  slippage_bps?: number | null;
+  gas_estimate_usd?: number | null;
+};
+
+export type ApprovalEvaluateResponse = {
+  status: string;
+  asset_from: string;
+  asset_to: string;
+  suggested_amount_usd: number;
+  capped_amount_usd: number;
+  cap_notes: string[];
+  violations: string[];
+};
+
+export type ApprovalCommitPayload = ApprovalEvaluatePayload & {
+  suggestion_id: number;
+  reason?: string | null;
+};
+
+export type ApprovalCommitResponse = {
+  evaluation: ApprovalEvaluateResponse;
+  created: boolean;
+  decision?: Decision | null;
+};
+
+export async function evaluateApproval(body: ApprovalEvaluatePayload): Promise<ApprovalEvaluateResponse> {
+  const r = await api.post(`/v1/approvals/evaluate`, body);
+  return r.data as ApprovalEvaluateResponse;
+}
+export async function commitApproval(body: ApprovalCommitPayload): Promise<ApprovalCommitResponse> {
+  const r = await api.post(`/v1/approvals/commit`, body);
+  return r.data as ApprovalCommitResponse;
+}
+
+export type RuntimeFlag = {
+  key: string;
+  value: string;
+  updated_at: string;
+};
+
+export type EmergencyStopState = {
+  enabled: boolean;
+  updated_at: string | null;
+};
+
+export async function listRuntimeFlags(): Promise<RuntimeFlag[]> {
+  const r = await api.get(`/v1/runtime-flags`);
+  return (r.data ?? []) as RuntimeFlag[];
+}
+export async function getEmergencyStop(): Promise<EmergencyStopState> {
+  const r = await api.get(`/v1/runtime-flags/emergency-stop`);
+  return r.data as EmergencyStopState;
+}
+export async function setEmergencyStop(enabled: boolean): Promise<EmergencyStopState> {
+  const r = await api.put(`/v1/runtime-flags/emergency-stop`, { enabled });
+  return r.data as EmergencyStopState;
+}
+export type TradeStatus = "submitted" | "confirmed" | "failed" | "cancelled";
+
+export type Trade = {
+  id: number;
+  suggestion_id: number;
+  executed_at: string | null;
+  status: TradeStatus;
+  tx_hash: string | null;
+  asset_from: string | null;
+  amount_from: number | null;
+  asset_to: string | null;
+  amount_to: number | null;
+  slippage_bps: number | null;
+  gas_est_usd: number | null;
+  error: string | null;
+};
+
+export async function listTrades(limit = 50): Promise<Trade[]> {
+  const r = await api.get(`/v1/trades`, { params: { limit } });
+  return (r.data ?? []) as Trade[];
+}
 export async function getAutoMode(): Promise<boolean> {
   try {
     const r = await api.get(`/v1/runtime-flags/auto_mode`);
     const v = String(r.data?.value ?? "").toLowerCase();
     return ["1","true","on","yes"].includes(v);
-  } catch (e: any) {
-    if (e?.response?.status === 404) return false;
-    throw e;
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 404) return false;
+    throw error;
   }
 }
-export async function setAutoMode(enabled: boolean) {
+export async function setAutoMode(enabled: boolean): Promise<RuntimeFlag> {
   const r = await api.put(`/v1/runtime-flags/auto_mode`, { value: String(enabled) });
-  return r.data;
+  return r.data as RuntimeFlag;
 }
-export async function getRuntimeFlag(key: string): Promise<{ key: string; value: string; updated_at: string } | null> {
+export async function getRuntimeFlag(key: string): Promise<RuntimeFlag | null> {
   try {
     const r = await api.get(`/v1/runtime-flags/${encodeURIComponent(key)}`);
-    return r.data;
-  } catch (e: any) {
-    if (e?.response?.status === 404) return null;
-    throw e;
+    return r.data as RuntimeFlag;
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 404) return null;
+    throw error;
   }
 }
 export type DailyMetrics = {

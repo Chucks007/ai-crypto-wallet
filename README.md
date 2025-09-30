@@ -14,6 +14,7 @@ Minimal, safe-by-default MVP for an AI-assisted crypto wallet.
 Quick start
 - Backend: copy `fastapi/.env.example` to `fastapi/.env`, then `make api` (see `docs/RUNBOOK.md` for setup and tests)
 - Frontend: `cd web && npm install && npm run dev`
+- Frontend lint/tests: `npm run lint` and `npm run test -- --run` from `web/`
 - API docs: `http://localhost:8000/docs`
 
 Safety defaults

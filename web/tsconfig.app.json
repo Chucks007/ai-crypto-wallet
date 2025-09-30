@@ -23,5 +23,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "typeRoots": ["./types", "./node_modules/@types"],
+  "include": ["src", "types/**/*.d.ts"]
 }

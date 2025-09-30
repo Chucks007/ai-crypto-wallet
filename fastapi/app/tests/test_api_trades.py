@@ -93,6 +93,26 @@ def _insert_trade(suggestion_id: int, status: str = "submitted") -> int:
                 pass
 
 
+def test_list_trades_returns_descending_with_statuses(client: TestClient):
+    sug_id = _insert_suggestion()
+    created_ids = [
+        _insert_trade(sug_id, status="submitted"),
+        _insert_trade(sug_id, status="confirmed"),
+        _insert_trade(sug_id, status="failed"),
+        _insert_trade(sug_id, status="cancelled"),
+    ]
+
+    response = client.get("/v1/trades", params={"limit": 10})
+    assert response.status_code == 200
+    data = response.json()
+
+    returned_ids = [item["id"] for item in data]
+    assert returned_ids[: len(created_ids)] == sorted(created_ids, reverse=True)
+
+    statuses = {item["status"] for item in data}
+    assert {"submitted", "confirmed", "failed", "cancelled"}.issubset(statuses)
+
+
 def test_quote_endpoint_returns_estimate(client: TestClient):
     payload = {
         "asset_from": "USDC",

@@ -88,8 +88,14 @@ make dev
 
 ## Tests
 ```
+# Backend
 cd fastapi
 pytest -q
+
+# Frontend
+cd ../web
+npm run lint
+npm run test -- --run
 ```
 
 ## Useful API endpoints

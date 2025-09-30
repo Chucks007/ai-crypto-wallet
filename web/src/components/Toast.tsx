@@ -1,25 +1,12 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { ToastCtx, type ToastKind } from "./ToastContext";
 
-type Kind = "info" | "success" | "error";
-type Toast = { id: number; message: string; kind: Kind };
-
-type Ctx = {
-  show: (message: string, kind?: Kind) => void;
-};
-
-const ToastCtx = createContext<Ctx | null>(null);
+type Toast = { id: number; message: string; kind: ToastKind };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Toast[]>([]);
 
-  const show = useCallback((message: string, kind: Kind = "info") => {
+  const show = useCallback((message: string, kind: ToastKind = "info") => {
     const id = Date.now() + Math.random();
     const t: Toast = { id, message, kind };
     setItems((xs) => [...xs, t]);
@@ -58,11 +45,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       </div>
     </ToastCtx.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastCtx);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
 }
 

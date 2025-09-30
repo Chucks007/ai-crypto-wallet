@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import {
   getEmergencyStop,
   setEmergencyStop,
@@ -10,7 +11,7 @@ import {
   type ExecutionStatus,
   type ExecutionToken,
 } from "../lib/api";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/useToast";
 
 const CHAIN_LABELS: Record<number, string> = {
   11155111: "Sepolia",
@@ -18,7 +19,7 @@ const CHAIN_LABELS: Record<number, string> = {
 };
 
 export default function SettingsPage() {
-  const apiBase = (import.meta as any).env.VITE_API_BASE || "http://localhost:8000";
+  const apiBase = import.meta.env?.VITE_API_BASE ?? "http://localhost:8000";
   const { show } = useToast();
   const [emergencyStop, setEmergencyStopState] = useState<boolean>(false);
   const [autoMode, setAutoModeState] = useState<boolean>(false);
@@ -66,6 +67,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let mounted = true;
+    const getErrorDetail = (error: unknown) => {
+      if (isAxiosError(error)) {
+        return error.response?.data?.detail ?? error.message;
+      }
+      if (error instanceof Error) {
+        return error.message;
+      }
+      return String(error);
+    };
     getEmergencyStop().then((d) => {
       if (mounted) setEmergencyStopState(!!d.enabled);
     }).catch(() => {/* ignore */});
@@ -78,9 +88,9 @@ export default function SettingsPage() {
         setExecutionStatus(status);
         setExecutionStatusError(null);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (!mounted) return;
-        const detail = err?.response?.data?.detail ?? err?.message ?? String(err);
+        const detail = getErrorDetail(err);
         setExecutionStatus(null);
         setExecutionStatusError(detail);
       });
@@ -90,9 +100,9 @@ export default function SettingsPage() {
         setExecutionTokens(tokens || []);
         setExecutionTokensError(null);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (!mounted) return;
-        const detail = err?.response?.data?.detail ?? err?.message ?? String(err);
+        const detail = getErrorDetail(err);
         setExecutionTokens([]);
         setExecutionTokensError(detail);
       });
@@ -106,7 +116,7 @@ export default function SettingsPage() {
       await setEmergencyStop(next);
       setEmergencyStopState(next);
       show(next ? "Emergency stop enabled" : "Emergency stop disabled", next ? "error" : "success");
-    } catch (e) {
+    } catch {
       show("Failed to toggle emergency stop", "error");
     } finally {
       setLoading(false);
@@ -119,7 +129,7 @@ export default function SettingsPage() {
       await setAutoMode(next);
       setAutoModeState(next);
       show(next ? "Auto mode enabled" : "Auto mode disabled", next ? "success" : "info");
-    } catch (e) {
+    } catch {
       show("Failed to toggle auto mode", "error");
     } finally {
       setLoading(false);
