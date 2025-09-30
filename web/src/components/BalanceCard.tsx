@@ -1,5 +1,3 @@
-import React from "react";
-
 type Balance = {
   id: number;
   asset: string;

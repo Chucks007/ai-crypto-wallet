@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getBalances, getDailyMetrics, type DailyMetrics } from "../lib/api";
 import { BalanceCard } from "../components/BalanceCard";
 import { RiskBar } from "../components/RiskBar";

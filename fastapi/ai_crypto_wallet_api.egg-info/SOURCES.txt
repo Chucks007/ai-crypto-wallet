@@ -33,9 +33,11 @@ app/tests/test_api_approval_commit.py
 app/tests/test_api_endpoints.py
 app/tests/test_api_runtime_flags.py
 app/tests/test_api_trades.py
+app/tests/test_asset_usage.py
 app/tests/test_auto_decider.py
 app/tests/test_core_indicators.py
 app/tests/test_core_risk.py
 app/tests/test_health.py
 app/tests/test_permit2.py
+app/tests/test_risk_helpers.py
 app/tests/test_token_utils.py

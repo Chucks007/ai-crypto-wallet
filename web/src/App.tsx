@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import Overview from './pages/Overview'
 import Suggestions from './pages/Suggestions'

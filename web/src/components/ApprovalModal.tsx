@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { commitApproval } from "../lib/api";
 import { useToast } from "./Toast";
 

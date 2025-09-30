@@ -1,11 +1,50 @@
 import axios from "axios";
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || "http://localhost:8000" });
+
+export type DecisionStatus = "approved" | "rejected" | "expired" | "cancelled";
+
+export type Decision = {
+  id: number;
+  suggestion_id: number;
+  decision: DecisionStatus;
+  reason: string | null;
+  decided_at: string;
+};
+
+export type DecisionListParams = {
+  status?: DecisionStatus;
+  decided_after?: string;
+  decided_before?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type DecisionListResponse = {
+  items: Decision[];
+  total: number;
+  page: number;
+  page_size: number;
+  has_more: boolean;
+};
+
+export type DecisionCreatePayload = {
+  suggestion_id: number;
+  decision: DecisionStatus;
+  reason?: string | null;
+};
 export async function getHealth() { const r = await api.get("/v1/health"); return r.data; }
 export async function getBalances() { const r = await api.get("/v1/balances"); return r.data; }
 export async function listSuggestions(limit = 50) { const r = await api.get(`/v1/suggestions`, { params: { limit } }); return r.data; }
 export async function createSuggestion(body: any) { const r = await api.post(`/v1/suggestions`, body); return r.data; }
-export async function listDecisions(limit = 50) { const r = await api.get(`/v1/decisions`, { params: { limit } }); return r.data; }
-export async function createDecision(body: any) { const r = await api.post(`/v1/decisions`, body); return r.data; }
+export async function listDecisions(params: DecisionListParams = {}): Promise<DecisionListResponse> {
+  const query = { page: 1, page_size: 50, ...params };
+  const r = await api.get(`/v1/decisions`, { params: query });
+  return r.data as DecisionListResponse;
+}
+export async function createDecision(body: DecisionCreatePayload): Promise<Decision> {
+  const r = await api.post(`/v1/decisions`, body);
+  return r.data as Decision;
+}
 export async function evaluateApproval(body: any) { const r = await api.post(`/v1/approvals/evaluate`, body); return r.data; }
 export async function commitApproval(body: any) { const r = await api.post(`/v1/approvals/commit`, body); return r.data; }
 export async function listRuntimeFlags() { const r = await api.get(`/v1/runtime-flags`); return r.data; }

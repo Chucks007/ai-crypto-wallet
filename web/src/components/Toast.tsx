@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 type Kind = "info" | "success" | "error";
 type Toast = { id: number; message: string; kind: Kind };
@@ -9,7 +16,7 @@ type Ctx = {
 
 const ToastCtx = createContext<Ctx | null>(null);
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Toast[]>([]);
 
   const show = useCallback((message: string, kind: Kind = "info") => {

@@ -19,6 +19,7 @@ Unreleased
  - Frontend: Overview page gains a small metrics panel backed by `GET /v1/metrics/daily`; RiskBar now reflects `tradesToday` from metrics.
  - Docs: updated RUNBOOK (request tracing), BACKEND (observability), FRONTEND (metrics panel), and NEXT_STEPS (polish completed).
 - Config: backend auto-loads `fastapi/.env` (and optional repo `.env`); pytest ignores local overrides to keep tests hermetic. Added `fastapi/.env.example` and refreshed docs.
+- Wallet: `/v1/decisions` now supports pagination plus status/date filters and returns `{ items, total, page, page_size, has_more }`; React client updated with typed DTOs.
 - Risk: allowlist supports per-token `min_trade_usd`; approvals/auto-decider enforce per-asset minimums, trade execution rejects dust amounts, and conversion raises `amount_below_min_trade`.
 
 2025-08-31

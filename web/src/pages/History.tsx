@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { Decision, DecisionListResponse } from "../lib/api";
 import { listDecisions, listTrades } from "../lib/api";
 import { Spinner } from "../components/Spinner";
 import { EmptyState } from "../components/EmptyState";
 import { useToast } from "../components/Toast";
 
 export default function HistoryPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [decisions, setDecisions] = useState<DecisionListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [trades, setTrades] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -14,13 +15,15 @@ export default function HistoryPage() {
   function refresh() {
     setLoading(true);
     setError(null);
-    Promise.all([listDecisions(50), listTrades(50)])
-      .then(([d, t]) => { setItems(d || []); setTrades(t || []); })
+    Promise.all([listDecisions(), listTrades(50)])
+      .then(([d, t]) => { setDecisions(d); setTrades(t || []); })
       .catch((e) => { setError(String(e)); show("Failed to load history", "error"); })
       .finally(() => setLoading(false));
   }
 
   useEffect(() => { refresh(); }, []);
+
+  const decisionItems: Decision[] = decisions?.items ?? [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -34,7 +37,7 @@ export default function HistoryPage() {
         </div>
       )}
       {error && !loading && <pre style={{ color: "#b91c1c", whiteSpace: "pre-wrap" }}>{error}</pre>}
-      {!loading && items.length === 0 && trades.length === 0 ? (
+      {!loading && decisionItems.length === 0 && trades.length === 0 ? (
         <EmptyState
           title="No decisions yet"
           subtitle="Approvals and rejections will show here once created."
@@ -54,7 +57,7 @@ export default function HistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((d) => (
+                {decisionItems.map((d) => (
                   <tr key={d.id}>
                     <td>{new Date(d.decided_at).toLocaleString()}</td>
                     <td>#{d.suggestion_id}</td>

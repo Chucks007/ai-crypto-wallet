@@ -1,6 +1,6 @@
-import React from "react";
+import type { ReactNode } from "react";
 
-export function EmptyState({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode; }) {
+export function EmptyState({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode; }) {
   return (
     <div style={{
       border: "1px dashed #d1d5db",

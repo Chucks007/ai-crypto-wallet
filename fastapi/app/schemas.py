@@ -34,6 +34,14 @@ class DecisionOut(DecisionIn):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DecisionListOut(BaseModel):
+    items: list[DecisionOut]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+
+
 class BalanceSnapshotOut(BaseModel):
     id: int
     captured_at: datetime

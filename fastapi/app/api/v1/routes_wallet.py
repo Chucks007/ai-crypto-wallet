@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import List
 
-from backend.db.models import BalanceSnapshot, Decision, Suggestion
+from backend.db.models import BalanceSnapshot, Decision, DecisionType, Suggestion
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from ...logging_util import log_event
 from ...schemas import (
     BalanceSnapshotOut,
     DecisionIn,
+    DecisionListOut,
     DecisionOut,
     SuggestionIn,
     SuggestionOut,
@@ -100,7 +101,47 @@ def create_decision(payload: DecisionIn, db: Session = Depends(get_db)):
     return dec
 
 
-@router.get("/decisions", response_model=List[DecisionOut])
-def list_decisions(limit: int = Query(50, ge=1, le=200), db: Session = Depends(get_db)):
-    stmt = select(Decision).order_by(Decision.decided_at.desc()).limit(limit)
-    return db.execute(stmt).scalars().all()
+@router.get("/decisions", response_model=DecisionListOut)
+def list_decisions(
+    *,
+    status: DecisionType | None = Query(default=None, description="Filter by decision status"),
+    decided_after: datetime | None = Query(
+        default=None, description="Include decisions decided at or after this timestamp"
+    ),
+    decided_before: datetime | None = Query(
+        default=None, description="Include decisions decided at or before this timestamp"
+    ),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(50, ge=1, le=200, description="Number of rows per page"),
+    db: Session = Depends(get_db),
+):
+    filters = []
+    if status is not None:
+        filters.append(Decision.decision == status.value)
+    if decided_after is not None:
+        filters.append(Decision.decided_at >= decided_after)
+    if decided_before is not None:
+        filters.append(Decision.decided_at <= decided_before)
+
+    stmt = select(Decision)
+    count_stmt = select(func.count()).select_from(Decision)
+    if filters:
+        stmt = stmt.where(*filters)
+        count_stmt = count_stmt.where(*filters)
+
+    stmt = (
+        stmt.order_by(Decision.decided_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+
+    items = db.execute(stmt).scalars().all()
+    total = db.execute(count_stmt).scalar_one()
+
+    return DecisionListOut(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        has_more=(page * page_size) < total,
+    )

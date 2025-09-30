@@ -46,9 +46,14 @@ Base URL: `/v1`
   - 404: `{ "detail": "suggestion not found" }`
   - 400: validation error (invalid decision value)
 
-- GET `/decisions?limit=50`
-  - 200: list of decisions (most recent first)
-  - Notes: `limit` in range [1,200], default 50
+- GET `/decisions`
+  - Query params:
+    - `page` (default 1, ≥1)
+    - `page_size` (default 50, between 1 and 200)
+    - `status` (optional; one of `approved`, `rejected`, `expired`, `cancelled`)
+    - `decided_after`, `decided_before` (optional ISO‑8601 timestamps, inclusive bounds)
+  - 200: `{ "items": [DecisionOut], "total": 120, "page": 1, "page_size": 50, "has_more": true }`
+  - Notes: sorted by `decided_at` descending; filters can be combined
 
 - POST `/approvals/evaluate`
   - Request: `{ "asset_from": "USDC", "asset_to": "ETH", "suggested_amount_usd": 25.0, "slippage_bps": 100, "gas_estimate_usd": 1.0 }`

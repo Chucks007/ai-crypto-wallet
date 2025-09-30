@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ApprovalModal } from "./ApprovalModal";
 import { EmptyState } from "./EmptyState";
 

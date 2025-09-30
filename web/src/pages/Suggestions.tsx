@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { listSuggestions } from "../lib/api";
 import { SuggestionList } from "../components/SuggestionList";
 import { Spinner } from "../components/Spinner";

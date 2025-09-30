@@ -1,5 +1,3 @@
-import React from "react";
-
 export function Spinner({ size = 16 }: { size?: number }) {
   const s = size;
   return (

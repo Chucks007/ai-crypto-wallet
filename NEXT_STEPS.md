@@ -3,8 +3,6 @@
 ## High Priority
 
 ## Medium Priority
-- API contracts and DTOs
-  - Add `/v1/decisions` filters (by date/status) and pagination; consistent types in web.
 - Web UX
   - Expose trades list (with status chips) and continue UI polish for approvals/trades.
 - Security & config
@@ -29,6 +27,8 @@
   - Structured JSON logs for suggestion → evaluation → decision → trade.
   - Metrics: `GET /v1/metrics/daily` (counts + last worker run).
   - History UI: shows dry-run trades alongside decisions.
+- API contracts and DTOs
+  - Added `/v1/decisions` filters (date/status) plus pagination; aligned backend DTOs and web types.
  - Observability polish
    - Overview: added a small metrics panel using `GET /v1/metrics/daily`.
    - Logs: added per-request correlation via `X-Request-ID`; all structured logs include `request_id`.
